@@ -106,7 +106,7 @@ module spi_reg #(
         end
       end
       STATE_ADDR : begin
-        if (rx_buffer_counter == REG_W) begin
+        if (buffer_counter == REG_W) begin
           sample_addr = 1'b1;
           next_state = STATE_CMD;
         end else if (eof == 1'b1) begin
@@ -123,7 +123,7 @@ module spi_reg #(
         end
       end
       STATE_RX_DATA : begin
-        if (rx_buffer_counter == REG_W) begin
+        if (buffer_counter == REG_W) begin
           sample_data = 1'b1;
           next_state = STATE_IDLE;
         end else if (eof == 1'b1) begin
@@ -131,9 +131,9 @@ module spi_reg #(
         end
       end
       STATE_TX_DATA : begin
-        if (tx_buffer_counter == 4'd0) begin
+        if (buffer_counter == '0) begin
           tx_buffer_load = 1'b1;
-        end else if (tx_buffer_counter == REG_W) begin
+        end else if (buffer_counter == REG_W) begin
           next_state = STATE_IDLE;
         end else if (eof == 1'b1) begin
           next_state = STATE_IDLE;
@@ -161,19 +161,19 @@ module spi_reg #(
     end
   end
 
-  // RX General counter
-  logic [5:0] rx_buffer_counter;
+  // General counter
+  logic [5:0] buffer_counter;
 
-  // RX Buffer Counter
+  // Buffer Counter
   always_ff @(negedge(rstb) or posedge(clk)) begin
     if (!rstb) begin
-      rx_buffer_counter <= '0;
+      buffer_counter <= '0;
     end else begin
       if (ena == 1'b1) begin
-        if (rx_buffer_counter == REG_W) begin
-          rx_buffer_counter <= '0;
+        if (buffer_counter == REG_W) begin
+          buffer_counter <= '0;
         end else if (spi_data_sample == 1'b1) begin
-          rx_buffer_counter <= rx_buffer_counter + 1'b1;
+          buffer_counter <= buffer_counter + 1'b1;
         end
       end
     end
@@ -218,24 +218,6 @@ module spi_reg #(
       end
     end
   end
-
-  // TX General counter
-  logic [5:0] tx_buffer_counter;
-    
-  // TX Buffer counter
-  always_ff @(negedge(rstb) or posedge(clk)) begin
-    if (!rstb) begin
-      tx_buffer_counter <= '0;
-    end else begin
-      if (ena == 1'b1) begin
-        if (tx_buffer_counter == REG_W) begin
-          tx_buffer_counter <= '0;
-        end else if (spi_data_sample == 1'b1) begin
-          tx_buffer_counter <= tx_buffer_counter + 1'b1;
-        end
-      end
-    end
-  end 
 
   // TX Buffer
   logic [REG_W-1:0] tx_buffer;
