@@ -3,6 +3,42 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+ // IO
+ //
+ // The TinyQV project uses a PMOD connector for input and output.
+ // The PMOD connector has 8 pins, which are used as follows:
+ //   - ui_in[0] to ui_in[7]: Input PMOD, always available. Note that ui_in[7] is normally used for UART RX.
+ //     The inputs are synchronized to the clock, note this will introduce 2 cycles of delay on the inputs.
+ //   - uo_out[0] to uo_out[7]: Output PMOD, only connected if this peripheral is selected.
+ //     Note that uo_out[0] is normally used for UART TX.
+ //     uo_out[1] is proposed for Audio PWM output.
+
+ // Memory Mapped Registers
+ //
+ //    0x00 - Example Register - Read/Write
+ //    0x01 - 0x0F - APU Register Direct Access (Pass-through for NES APU registers 0x4001-0x400F) - Read/Write
+ //    0x10 - Configuration0 - Read/Write
+ //       | b7           | b6                  | b5                   | b4   | b3 | b2  | b1 | b0 |
+ //       | Enhanced APU |  Audio Channels MSB | Audio Channels LSB   | Even | CS | PAL | US | CE |
+ //
+ //    0x11 - Configuration1 - Read/Write
+ //       | b7 | b6 | b5 | b4 | b3 | b2 | b1 | b0 |
+ //       | PMOD PWM Out enable |  |  |  |  |  | isMMC5 | APU Mapper saturates |
+ //
+ //    0x12 - Status0 - Read
+ //       | b7 | b6 | b5 | b4 | b3 | b2 | b1 | b0 |
+ //       |    |    |    |    |    |    | IRQ | Data Output Ready |
+ //
+ //    0x20 - Data Input - Write (Data to be written to APU's DIN port for commands/writes)
+ //
+ //    0x21 - Data Output MSB - Read (MSB of APU Sample)
+ //
+ //    0x22 - Data Output LSB - Read (LSB of APU Sample)
+ //
+ //    APU internal registers (0x4000-0x401F):
+ //      Accessed via peripheral addresses 0x01-0x0F for direct read/write,
+ //      or indirectly via 0x20 write for specific commands, and 0x21/0x22 read for audio sample.
+
 `default_nettype none
 
 // Change the name of this module to something that reflects its functionality and includes your name for uniqueness
@@ -30,6 +66,34 @@ module tqvp_fjpolo_rv2a03 (
 
     output        user_interrupt  // Dedicated interrupt request for this peripheral
 );
+
+    /* --- NES APU Instance --- */
+    APU apu(
+        .MMC5(),
+        .clk(),
+        .PHI2(),
+        .ce(),
+        .reset(),
+        .cold_reset(),
+        .allow_us(),
+        .PAL(),
+        .ADDR(),
+        .DIN(),
+        .RW(),
+        .CS(),
+        .audio_channels(),
+        .DmaData(),       // Stubbed input
+        .odd_or_even(),
+        .DmaAck(),         // Stubbed input
+        .DOUT(),
+        .Sample(),
+        .DmaReq(),        // Output, but ignored for now
+        .DmaAddr(),      // Output, but ignored for now
+        .IRQ(),           // Captured in status register
+        .apu_enhanced_ce(),
+        .apu_mapper_saturates(),
+        .o_ce() // APU's output enable (when Sample is valid)
+    );
 
     // Implement a 32-bit read/write register at address 0
     reg [31:0] example_data;
