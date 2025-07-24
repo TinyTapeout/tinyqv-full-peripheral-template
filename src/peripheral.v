@@ -143,9 +143,7 @@ module tqvp_fjpolo_rv2a03 (
             apu_q1_synced_data_wr <= 1'b0;
             apu_synced_data_wr <= 1'b0;
         end else begin
-            // Synchronize data_write from 64MHz domain to PHI2 domain
-            // apu_q1_synced_data_wr <= apu_wr_signal_RVdomain;         // Metastable signal
-            // apu_synced_data_wr <= apu_q1_synced_data_wr;             // Synchronized signal
+            // Synchronize apu_wr_signal_RVdomain from 64MHz domain to PHI2 domain
             {apu_synced_data_wr, apu_q1_synced_data_wr} = {apu_q1_synced_data_wr, apu_wr_signal_RVdomain};
         end
     end
@@ -160,47 +158,58 @@ module tqvp_fjpolo_rv2a03 (
             apu_q1_synced_data_rw <= 1'b0;
             apu_synced_data_rw <= 1'b0;
         end else begin
-            // Synchronize data_read from 64MHz domain to PHI2 domain
-            // apu_q1_synced_data_rw <= apu_rw_signal_RVdomain;         // Metastable signal
-            // apu_synced_data_rw <= apu_q1_synced_data_rw;             // Synchronized signal
+            // Synchronize apu_rw_signal_RVdomain from 64MHz domain to PHI2 domain
             {apu_synced_data_rw, apu_q1_synced_data_rw} = {apu_q1_synced_data_rw, apu_rw_signal_RVdomain};
         end
     end
     assign apu_rw_signal = apu_synced_data_rw;
 
-    // data_in
-    wire [7:0] apu_data_in;
-    logic apu_q1_synced_data_in;
-    logic apu_synced_data_in;
-    always @(posedge cpu_phi2_internal or negedge rst_n) begin
-        if (!rst_n) begin
-            apu_q1_synced_data_in <= 1'b0;
-            apu_synced_data_in <= 1'b0;
-        end else begin
-            // Synchronize data_read from 64MHz domain to PHI2 domain
-            // apu_q1_synced_data_in <= apu_rw_signal_RVdomain;         // Metastable signal
-            // apu_synced_data_in <= apu_q1_synced_data_in;             // Synchronized signal
-            {apu_synced_data_in, apu_q1_synced_data_in} = {apu_q1_synced_data_in, data_in[7:0]};
-        end
-    end
-    assign apu_data_in = apu_synced_data_in;
+    // // data_in
+    // wire [7:0] apu_data_in;
+    // logic apu_q1_synced_data_in;
+    // logic apu_synced_data_in;
+    // always @(posedge cpu_phi2_internal or negedge rst_n) begin
+    //     if (!rst_n) begin
+    //         apu_q1_synced_data_in <= 1'b0;
+    //         apu_synced_data_in <= 1'b0;
+    //     end else begin
+    //         // Synchronize data_in[7:0] from 64MHz domain to PHI2 domain
+    //         {apu_synced_data_in, apu_q1_synced_data_in} = {apu_q1_synced_data_in, data_in[7:0]};
+    //     end
+    // end
+    // assign apu_data_in = apu_synced_data_in;
 
-    // address
-    wire [7:0] apu_address;
-    logic apu_q1_synced_address;
-    logic apu_synced_address;
-    always @(posedge cpu_phi2_internal or negedge rst_n) begin
-        if (!rst_n) begin
-            apu_q1_synced_address <= 1'b0;
-            apu_synced_address <= 1'b0;
-        end else begin
-            // Synchronize data_read from 64MHz domain to PHI2 domain
-            // apu_q1_synced_address <= apu_rw_signal_RVdomain;         // Metastable signal
-            // apu_synced_address <= apu_q1_synced_address;             // Synchronized signal
-            {apu_synced_address, apu_q1_synced_address} = {apu_q1_synced_address, address};
-        end
-    end
-    assign apu_address = apu_synced_address[4:0];
+    // // address
+    // wire [7:0] apu_address;
+    // logic apu_q1_synced_address;
+    // logic apu_synced_address;
+    // always @(posedge cpu_phi2_internal or negedge rst_n) begin
+    //     if (!rst_n) begin
+    //         apu_q1_synced_address <= 1'b0;
+    //         apu_synced_address <= 1'b0;
+    //     end else begin
+    //         // Synchronize address from 64MHz domain to PHI2 domain
+    //         {apu_synced_address, apu_q1_synced_address} = {apu_q1_synced_address, address};
+    //     end
+    // end
+    // assign apu_address = apu_synced_address[4:0];
+
+    // // reg_configuration0
+    // // logic apu_q1_synced_reg_configuration0;
+    // // logic apu_synced_reg_configuration0;
+    // // always @(posedge cpu_phi2_internal or negedge rst_n) begin
+    // //     if (!rst_n) begin
+    // //         apu_q1_synced_reg_configuration0 <= 1'b0;
+    // //         apu_synced_reg_configuration0 <= 1'b0;
+    // //     end else begin
+    // //         // Synchronize data_read from 64MHz domain to PHI2 domain
+    // //         {apu_synced_reg_configuration0, apu_q1_synced_reg_configuration0} = {apu_q1_synced_reg_configuration0, reg_configuration0};
+    // //     end
+    // // end
+
+    // // reg_configuration1
+    // // reg_status0
+    // // reg_data_input
 
     /* --- NES APU Instance --- */
     APU apu(
@@ -229,6 +238,14 @@ module tqvp_fjpolo_rv2a03 (
         .apu_mapper_saturates(),
         .o_ce()             // APU's output enable (when Sample is valid)
     );
+
+
+
+
+
+
+
+    // TODO: Clean this up
 
     // Implement a 32-bit read/write register at address 0
     reg [31:0] example_data;
