@@ -115,7 +115,7 @@ module tqvp_fjpolo_rv2a03 (
     /* --- APU Register Access Mapping --- */
     // Ensure apu_address_for_module is 16-bit by padding 0x40 to 6 bits
     wire [15:0] apu_address_for_module;
-    assign apu_address_for_module = ((address > 6'h0)&&(address <= 6'hF)) ? {2'b0, 8'h40, address} : 16'h0000;
+    assign apu_address_for_module = ((address >= 6'h0)&&(address <= 6'hF)) ? {2'b0, 8'h40, address} : 16'h0000;
 
     // APU.RW: 1 for Read, 0 for Write. TinyQV data_write: 1 for Write, 0 for Read.
     wire data_write =   (data_write_n == 2'b10) ? 1'b1 :    // 32-bit write
@@ -125,7 +125,7 @@ module tqvp_fjpolo_rv2a03 (
     wire apu_rw_signal = ~data_write;
 
     // // APU.CS: Asserted when APU chip select from config is high AND the peripheral address targets APU registers.
-    // wire apu_cs_signal_for_direct_access = apu_cs_config_bit && (address > 6'h0 && address <= 6'hF);
+    // wire apu_cs_signal_for_direct_access = apu_cs_config_bit && ((address >= 6'h0)&&(address <= 6'hF));
 
     /* --- NES APU Instance --- */
     APU apu(
