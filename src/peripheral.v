@@ -112,10 +112,10 @@ module tqvp_fjpolo_rv2a03 (
         .clk_out(cpu_phi2_internal)
     );
 
-    // /* --- APU Register Access Mapping --- */
-    // // Ensure apu_address_for_module is 16-bit by padding 0x40 to 6 bits
-    // wire [15:0] apu_address_for_module;
-    // assign apu_address_for_module = (address > 6'h0 && address <= 6'hF) ? {2'b0, 8'h40, address} : 16'h0000;
+    /* --- APU Register Access Mapping --- */
+    // Ensure apu_address_for_module is 16-bit by padding 0x40 to 6 bits
+    wire [15:0] apu_address_for_module;
+    assign apu_address_for_module = ((address > 6'h0)&&(address <= 6'hF)) ? {2'b0, 8'h40, address} : 16'h0000;
 
     // // APU.RW: 1 for Read, 0 for Write. TinyQV data_write: 1 for Write, 0 for Read.
     // wire data_write =   (data_write_n == 2'b10) ? 1'b1 :    // 32-bit write
