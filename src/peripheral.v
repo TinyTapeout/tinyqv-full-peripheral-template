@@ -96,6 +96,22 @@ module tqvp_fjpolo_rv2a03 (
     wire [15:0] apu_internal_sample_wire;
     wire apu_data_output_ready;         // APU's output enable (APU.o_ce)
 
+    /* --- Clock Divider for APU Sound Clock --- */
+    logic apu_sound_clk;
+    fractional_divider apu_clk_divider (
+        .clk_in(clk),
+        .rst_n(rst_n),
+        .clk_out(apu_sound_clk)
+    );
+
+    /* --- Clock Divider for PHI2 Clock --- */
+    logic cpu_phi2_internal;
+    fractional_divider phi2_clk_divider (
+        .clk_in(clk),
+        .rst_n(rst_n),
+        .clk_out(cpu_phi2_internal)
+    );
+
     /* --- NES APU Instance --- */
     APU apu(
         .MMC5(),
