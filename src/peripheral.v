@@ -67,6 +67,14 @@ module tqvp_fjpolo_rv2a03 (
     output        user_interrupt  // Dedicated interrupt request for this peripheral
 );
 
+    /* --- Registers --- */
+    reg [7:0] reg_configuration0;
+    reg [7:0] reg_configuration1;
+    reg [7:0] reg_data_input;
+    reg [7:0] reg_data_output_msb;
+    reg [7:0] reg_data_output_lsb;
+    reg [7:0] reg_status0;
+
     /* --- NES APU Instance --- */
     APU apu(
         .MMC5(),
