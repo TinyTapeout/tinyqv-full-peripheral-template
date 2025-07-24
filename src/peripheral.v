@@ -105,17 +105,17 @@ module tqvp_fjpolo_rv2a03 (
     );
 
     /* --- Clock Divider for PHI2 Clock --- */
-    logic cpu_phi2_internal;
+    logic apu_phi2_clk;
     fractional_divider phi2_clk_divider (
         .clk_in(clk),
         .rst_n(rst_n),
-        .clk_out(cpu_phi2_internal) // 1.789773 MHz
+        .clk_out(apu_phi2_clk) // 1.789773 MHz
     );
 
-    /* --- APU Register Access Mapping --- */
-    // Ensure apu_address_for_module is 16-bit by padding 0x40 to 6 bits
-    wire [15:0] apu_address_for_module;
-    assign apu_address_for_module = ((address >= 6'h0)&&(address <= 6'hF)) ? {2'b0, 8'h40, address} : 16'h0000;
+    // /* --- APU Register Access Mapping --- */
+    // // Ensure apu_address_for_module is 16-bit by padding 0x40 to 6 bits
+    // wire [15:0] apu_address_for_module;
+    // assign apu_address_for_module = ((address >= 6'h0)&&(address <= 6'hF)) ? {2'b0, 8'h40, address} : 16'h0000;
 
     // APU.WR: 1 for Write
     wire apu_wr_signal_RVdomain =   (data_write_n == 2'b10) ? 1'b1 :     // 32-bit write
@@ -138,7 +138,7 @@ module tqvp_fjpolo_rv2a03 (
     wire apu_wr_signal;
     logic apu_q1_synced_data_wr;
     logic apu_synced_data_wr;
-    always @(posedge cpu_phi2_internal or negedge rst_n) begin
+    always @(posedge apu_phi2_clk or negedge rst_n) begin
         if (!rst_n) begin
             apu_q1_synced_data_wr <= 1'b0;
             apu_synced_data_wr <= 1'b0;
@@ -153,7 +153,7 @@ module tqvp_fjpolo_rv2a03 (
     wire apu_rw_signal;
     logic apu_q1_synced_data_rw;
     logic apu_synced_data_rw;
-    always @(posedge cpu_phi2_internal or negedge rst_n) begin
+    always @(posedge apu_phi2_clk or negedge rst_n) begin
         if (!rst_n) begin
             apu_q1_synced_data_rw <= 1'b0;
             apu_synced_data_rw <= 1'b0;
@@ -168,7 +168,7 @@ module tqvp_fjpolo_rv2a03 (
     wire  [7:0] apu_data_in;
     logic [7:0] apu_q1_synced_data_in;
     logic [7:0] apu_synced_data_in;
-    always @(posedge cpu_phi2_internal or negedge rst_n) begin
+    always @(posedge apu_phi2_clk or negedge rst_n) begin
         if (!rst_n) begin
             apu_q1_synced_data_in <= 8'h0;
             apu_synced_data_in <= 8'h0;
@@ -182,7 +182,7 @@ module tqvp_fjpolo_rv2a03 (
     // address
     logic [5:0] apu_q1_synced_address;
     logic [5:0] apu_synced_address;
-    always @(posedge cpu_phi2_internal or negedge rst_n) begin
+    always @(posedge apu_phi2_clk or negedge rst_n) begin
         if (!rst_n) begin
             apu_q1_synced_address <= 6'h0;
             apu_synced_address <= 6'h0;
@@ -195,7 +195,7 @@ module tqvp_fjpolo_rv2a03 (
     // // reg_configuration0
     // logic [7:0] apu_q1_synced_reg_configuration0;
     // logic [7:0] apu_synced_reg_configuration0;
-    // always @(posedge cpu_phi2_internal or negedge rst_n) begin
+    // always @(posedge apu_phi2_clk or negedge rst_n) begin
     //     if (!rst_n) begin
     //         apu_q1_synced_reg_configuration0 <= 8'h0;
     //         apu_synced_reg_configuration0 <= 8'h0;
@@ -208,7 +208,7 @@ module tqvp_fjpolo_rv2a03 (
     // // reg_configuration1
     // logic [7:0] apu_q1_synced_reg_configuration1;
     // logic [7:0] apu_synced_reg_configuration1;
-    // always @(posedge cpu_phi2_internal or negedge rst_n) begin
+    // always @(posedge apu_phi2_clk or negedge rst_n) begin
     //     if (!rst_n) begin
     //         apu_q1_synced_reg_configuration1 <= 8'h0;
     //         apu_synced_reg_configuration1 <= 8'h0;
@@ -222,7 +222,7 @@ module tqvp_fjpolo_rv2a03 (
     // wire  [7:0] apu_status0_wire;
     // logic [7:0] apu_q1_synced_status0;
     // logic [7:0] apu_synced_status0;
-    // always @(posedge cpu_phi2_internal or negedge rst_n) begin
+    // always @(posedge apu_phi2_clk or negedge rst_n) begin
     //     if (!rst_n) begin
     //         apu_q1_synced_status0 <= 8'h0;
     //         apu_synced_status0 <= 8'h0;
@@ -238,8 +238,8 @@ module tqvp_fjpolo_rv2a03 (
     /* --- NES APU Instance --- */
     APU apu(
         .MMC5(),
-        .clk(),
-        .PHI2(),
+        .clk(apu_sound_clk),
+        .PHI2(apu_phi2_clk),
         .ce(),
         .reset(),
         .cold_reset(),
