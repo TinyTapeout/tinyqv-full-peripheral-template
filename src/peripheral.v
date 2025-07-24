@@ -134,7 +134,8 @@ module tqvp_fjpolo_rv2a03 (
     // wire apu_cs_signal_DA = apu_cs_config_bit && ((address >= 6'h0)&&(address <= 6'hF));
 
     /* ⚠⚠⚠ CDC ⚠⚠⚠ */
-    // apu_wr_signal
+    // apu_wr_signal_RVdomain
+    wire apu_wr_signal;
     logic apu_q1_synced_data_wr;
     logic apu_synced_data_wr;
     always @(posedge cpu_phi2_internal or negedge rst_n) begin
@@ -150,6 +151,7 @@ module tqvp_fjpolo_rv2a03 (
     end
     assign apu_wr_signal = ~apu_synced_data_wr;
     // apu_rw_signal
+    wire apu_rw_signal;
     logic apu_q1_synced_data_rw;
     logic apu_synced_data_rw;
     always @(posedge cpu_phi2_internal or negedge rst_n) begin
