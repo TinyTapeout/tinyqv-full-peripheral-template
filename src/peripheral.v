@@ -165,7 +165,6 @@ module tqvp_fjpolo_rv2a03 (
     assign apu_rw_signal = apu_synced_data_rw;
 
     // data_in
-    wire  [7:0] apu_data_in;
     logic [7:0] apu_q1_synced_data_in;
     logic [7:0] apu_synced_data_in;
     always @(posedge apu_phi2_clk or negedge rst_n) begin
@@ -177,7 +176,6 @@ module tqvp_fjpolo_rv2a03 (
             {apu_synced_data_in, apu_q1_synced_data_in} = {apu_q1_synced_data_in, data_in[7:0]};
         end
     end
-    assign apu_data_in = apu_synced_data_in;
 
     // address
     logic [5:0] apu_q1_synced_address;
@@ -245,7 +243,7 @@ module tqvp_fjpolo_rv2a03 (
         .cold_reset(!rst_n),
         .allow_us(),
         .PAL(),
-        .ADDR(),
+        .ADDR(apu_q1_synced_address),
         .DIN(),
         .RW(),
         .CS(),
