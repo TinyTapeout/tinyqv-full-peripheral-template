@@ -101,7 +101,7 @@ module tqvp_fjpolo_rv2a03 (
     fractional_divider apu_clk_divider (
         .clk_in(clk),
         .rst_n(rst_n),
-        .clk_out(apu_sound_clk)
+        .clk_out(apu_sound_clk) // 1.789773 MHz
     );
 
     /* --- Clock Divider for PHI2 Clock --- */
@@ -109,7 +109,7 @@ module tqvp_fjpolo_rv2a03 (
     fractional_divider phi2_clk_divider (
         .clk_in(clk),
         .rst_n(rst_n),
-        .clk_out(cpu_phi2_internal)
+        .clk_out(cpu_phi2_internal) // 1.789773 MHz
     );
 
     /* --- APU Register Access Mapping --- */
@@ -119,9 +119,9 @@ module tqvp_fjpolo_rv2a03 (
 
     // APU.WR: 1 for Write
     wire apu_wr_signal_RVdomain =   (data_write_n == 2'b10) ? 1'b1 :     // 32-bit write
-                                    (data_write_n == 2'b01) ? 1'b1 :        // 16-bit write
-                                    (data_write_n == 2'b00) ? 1'b1 :        // 8-bit write
-                                    1'b0;                                   // 2'b11 - No write
+                                    (data_write_n == 2'b01) ? 1'b1 :     // 16-bit write
+                                    (data_write_n == 2'b00) ? 1'b1 :     // 8-bit write
+                                    1'b0;                                // 2'b11 - No write
 
     // APU.RW: 1 for Read
     wire apu_rw_signal_RVdomain =   (data_read_n == 2'b10) ? 1'b1 :    // 32-bit read
@@ -145,11 +145,12 @@ module tqvp_fjpolo_rv2a03 (
         end else begin
             // Synchronize data_write from 64MHz domain to PHI2 domain
             // apu_q1_synced_data_wr <= apu_wr_signal_RVdomain;         // Metastable signal
-            // apu_synced_data_wr <= apu_q1_synced_data_wr;    // Synchronized signal
+            // apu_synced_data_wr <= apu_q1_synced_data_wr;             // Synchronized signal
             {apu_synced_data_wr, apu_q1_synced_data_wr} = {apu_q1_synced_data_wr, apu_wr_signal_RVdomain};
         end
     end
-    assign apu_wr_signal = ~apu_synced_data_wr;
+    assign apu_wr_signal = apu_synced_data_wr;
+
     // apu_rw_signal
     wire apu_rw_signal;
     logic apu_q1_synced_data_rw;
@@ -161,11 +162,45 @@ module tqvp_fjpolo_rv2a03 (
         end else begin
             // Synchronize data_read from 64MHz domain to PHI2 domain
             // apu_q1_synced_data_rw <= apu_rw_signal_RVdomain;         // Metastable signal
-            // apu_synced_data_rw <= apu_q1_synced_data_rw;    // Synchronized signal
+            // apu_synced_data_rw <= apu_q1_synced_data_rw;             // Synchronized signal
             {apu_synced_data_rw, apu_q1_synced_data_rw} = {apu_q1_synced_data_rw, apu_rw_signal_RVdomain};
         end
     end
-    assign apu_rw_signal = ~apu_synced_data_rw;
+    assign apu_rw_signal = apu_synced_data_rw;
+
+    // data_in
+    wire [7:0] apu_data_in;
+    logic apu_q1_synced_data_in;
+    logic apu_synced_data_in;
+    always @(posedge cpu_phi2_internal or negedge rst_n) begin
+        if (!rst_n) begin
+            apu_q1_synced_data_in <= 1'b0;
+            apu_synced_data_in <= 1'b0;
+        end else begin
+            // Synchronize data_read from 64MHz domain to PHI2 domain
+            // apu_q1_synced_data_in <= apu_rw_signal_RVdomain;         // Metastable signal
+            // apu_synced_data_in <= apu_q1_synced_data_in;             // Synchronized signal
+            {apu_synced_data_in, apu_q1_synced_data_in} = {apu_q1_synced_data_in, data_in[7:0]};
+        end
+    end
+    assign apu_data_in = apu_synced_data_in;
+
+    // address
+    wire [7:0] apu_address;
+    logic apu_q1_synced_address;
+    logic apu_synced_address;
+    always @(posedge cpu_phi2_internal or negedge rst_n) begin
+        if (!rst_n) begin
+            apu_q1_synced_address <= 1'b0;
+            apu_synced_address <= 1'b0;
+        end else begin
+            // Synchronize data_read from 64MHz domain to PHI2 domain
+            // apu_q1_synced_address <= apu_rw_signal_RVdomain;         // Metastable signal
+            // apu_synced_address <= apu_q1_synced_address;             // Synchronized signal
+            {apu_synced_address, apu_q1_synced_address} = {apu_q1_synced_address, address};
+        end
+    end
+    assign apu_address = apu_synced_address[4:0];
 
     /* --- NES APU Instance --- */
     APU apu(
