@@ -162,7 +162,7 @@ module tqvp_fjpolo_rv2a03 (
             {apu_synced_data_rw, apu_q1_synced_data_rw} = {apu_q1_synced_data_rw, apu_rw_signal_RVdomain};
         end
     end
-    assign apu_rw_signal = apu_synced_data_rw;
+    assign apu_rw_signal = (apu_wr_signal) : 1'b0 : 1'b1;  // Default to read
 
     // data_in
     logic [7:0] apu_q1_synced_data_in;
@@ -245,7 +245,7 @@ module tqvp_fjpolo_rv2a03 (
         .PAL(),
         .ADDR(apu_q1_synced_address),
         .DIN(apu_synced_data_in),
-        .RW(),
+        .RW(apu_rw_signal),
         .CS(),
         .audio_channels(),
         .DmaData(),         // Stubbed input
