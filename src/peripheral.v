@@ -75,6 +75,16 @@ module tqvp_fjpolo_rv2a03 (
     reg [7:0] reg_data_output_lsb;
     reg [7:0] reg_status0;
 
+    /* --- Internal Wires/Signals --- */
+    // Signals extracted from Configuration0 (for APU module)
+    wire apu_ce_config_bit    = reg_configuration0[0];
+    wire apu_pal              = reg_configuration0[1];
+    wire apu_us               = reg_configuration0[2];
+    wire apu_cs_config_bit    = reg_configuration0[3];
+    wire apu_even             = reg_configuration0[4];
+    wire [1:0] apu_audio_channels = {reg_configuration0[6], reg_configuration0[5]};
+    wire apu_enhanced         = reg_configuration0[7];
+
     /* --- NES APU Instance --- */
     APU apu(
         .MMC5(),
