@@ -19,8 +19,8 @@ project:
   source_files:
     - "peripheral.v"
     - "tt_wrapper.v"
-    - "RV2A03/apu.v"
-    - "RV2A03/fractional_divider.v"
+    - "user_peripherals/RV2A03/apu.v"
+    - "user_peripherals/RV2A03/fractional_divider.v"
     - "spi/falling_edge_detector.sv"
     - "spi/rising_edge_detector.sv"
     - "spi/reclocking.sv"
