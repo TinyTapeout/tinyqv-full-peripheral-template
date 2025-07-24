@@ -85,6 +85,17 @@ module tqvp_fjpolo_rv2a03 (
     wire [1:0] apu_audio_channels = {reg_configuration0[6], reg_configuration0[5]};
     wire apu_enhanced         = reg_configuration0[7];
 
+    // Signals extracted from Configuration1 (for APU module)
+    wire apu_mapper_saturates = reg_configuration1[0];
+    wire apu_is_mmc5          = reg_configuration1[1];
+    // PMOD PWM output
+    // wire apu_pmod_pwm_out_enable = reg_configuration1[7];
+
+    // APU internal signals (outputs from APU module)
+    wire [7:0] apu_data_out;
+    wire [15:0] apu_internal_sample_wire;
+    wire apu_data_output_ready;         // APU's output enable (APU.o_ce)
+
     /* --- NES APU Instance --- */
     APU apu(
         .MMC5(),
