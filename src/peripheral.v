@@ -55,9 +55,18 @@ module tqvp_example (
                       (address == 6'h4) ? {24'h0, ui_in} :
                       32'h0;
 
-    // All reads complete in 1 clock
-    assign data_ready = 1;
-    
+    // Reads complete in 5-7 clocks
+    reg [3:0] counter;
+    always @(posedge clk) begin
+        if (data_read_n == 2'b11) begin
+            counter <= 0;
+        end else begin
+            if (counter == 0) counter <= data_read_n + 1;
+            else counter <= counter + 1;
+        end
+    end
+    assign data_ready = counter == 4'd7 || address == 6'h4;
+
     // User interrupt is generated on rising edge of ui_in[6], and cleared by writing a 1 to the low bit of address 8.
     reg example_interrupt;
     reg last_ui_in_6;
