@@ -22,7 +22,7 @@
  //       | Enhanced APU |  Audio Channels MSB | Audio Channels LSB   | Even | CS | PAL | US | CE |
  //
  //    0x11 - Configuration1 - Read/Write
- //       | b7 | b6 | b5 | b4 | b3 | b2 | b1 | b0 |
+ //       | b7                  | b6 | b5 | b4 | b3 | b2 | b1 | b0 |
  //       | PMOD PWM Out enable |  |  |  |  |  | isMMC5 | APU Mapper saturates |
  //
  //    0x12 - Status0 - Read
@@ -111,6 +111,17 @@ module tqvp_fjpolo_rv2a03 (
         .rst_n(rst_n),
         .clk_out(cpu_phi2_internal)
     );
+
+    /* --- APU Register Access Mapping --- */
+    // Ensure apu_address_for_module is 16-bit by padding 0x40 to 6 bits
+    wire [15:0] apu_address_for_module;
+    assign apu_address_for_module = (address > 6'h0 && address <= 6'hF) ? {2'b0, 8'h40, address} : 16'h0000;
+
+    // APU.RW: 1 for Read, 0 for Write. TinyQV data_write: 1 for Write, 0 for Read.
+    wire apu_rw_signal = ~data_write;
+
+    // APU.CS: Asserted when APU chip select from config is high AND the peripheral address targets APU registers.
+    wire apu_cs_signal_for_direct_access = apu_cs_config_bit && (address > 6'h0 && address <= 6'hF);
 
     /* --- NES APU Instance --- */
     APU apu(
