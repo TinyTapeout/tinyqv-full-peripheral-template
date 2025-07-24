@@ -164,25 +164,25 @@ module tqvp_fjpolo_rv2a03 (
     end
     assign apu_rw_signal = apu_synced_data_rw;
 
-    // // data_in
-    // wire [7:0] apu_data_in;
-    // logic apu_q1_synced_data_in;
-    // logic apu_synced_data_in;
-    // always @(posedge cpu_phi2_internal or negedge rst_n) begin
-    //     if (!rst_n) begin
-    //         apu_q1_synced_data_in <= 1'b0;
-    //         apu_synced_data_in <= 1'b0;
-    //     end else begin
-    //         // Synchronize data_in[7:0] from 64MHz domain to PHI2 domain
-    //         {apu_synced_data_in, apu_q1_synced_data_in} = {apu_q1_synced_data_in, data_in[7:0]};
-    //     end
-    // end
-    // assign apu_data_in = apu_synced_data_in;
+    // data_in
+    wire  [7:0] apu_data_in;
+    logic [7:0] apu_q1_synced_data_in;
+    logic [7:0] apu_synced_data_in;
+    always @(posedge cpu_phi2_internal or negedge rst_n) begin
+        if (!rst_n) begin
+            apu_q1_synced_data_in <= 1'b0;
+            apu_synced_data_in <= 1'b0;
+        end else begin
+            // Synchronize data_in[7:0] from 64MHz domain to PHI2 domain
+            {apu_synced_data_in, apu_q1_synced_data_in} = {apu_q1_synced_data_in, data_in[7:0]};
+        end
+    end
+    assign apu_data_in = apu_synced_data_in;
 
     // // address
-    // wire [7:0] apu_address;
-    // logic apu_q1_synced_address;
-    // logic apu_synced_address;
+    // wire  [5:0] apu_address;
+    // logic [5:0] apu_q1_synced_address;
+    // logic [5:0] apu_synced_address;
     // always @(posedge cpu_phi2_internal or negedge rst_n) begin
     //     if (!rst_n) begin
     //         apu_q1_synced_address <= 1'b0;
@@ -192,7 +192,7 @@ module tqvp_fjpolo_rv2a03 (
     //         {apu_synced_address, apu_q1_synced_address} = {apu_q1_synced_address, address};
     //     end
     // end
-    // assign apu_address = apu_synced_address[4:0];
+    // assign apu_address = apu_synced_address;
 
     // // reg_configuration0
     // // logic apu_q1_synced_reg_configuration0;
