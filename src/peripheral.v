@@ -117,12 +117,12 @@ module tqvp_fjpolo_rv2a03 (
     wire [15:0] apu_address_for_module;
     assign apu_address_for_module = ((address > 6'h0)&&(address <= 6'hF)) ? {2'b0, 8'h40, address} : 16'h0000;
 
-    // // APU.RW: 1 for Read, 0 for Write. TinyQV data_write: 1 for Write, 0 for Read.
-    // wire data_write =   (data_write_n == 2'b10) ? 1'b1 :    // 32-bit write
-    //                     (data_write_n == 2'b01) ? 1'b1 :    // 16-bit write
-    //                     (data_write_n == 2'b00) ? 1'b1 :    // 8-bit write
-    //                     1'b0;                               // 2'b11 - No write
-    // wire apu_rw_signal = ~data_write;
+    // APU.RW: 1 for Read, 0 for Write. TinyQV data_write: 1 for Write, 0 for Read.
+    wire data_write =   (data_write_n == 2'b10) ? 1'b1 :    // 32-bit write
+                        (data_write_n == 2'b01) ? 1'b1 :    // 16-bit write
+                        (data_write_n == 2'b00) ? 1'b1 :    // 8-bit write
+                        1'b0;                               // 2'b11 - No write
+    wire apu_rw_signal = ~data_write;
 
     // // APU.CS: Asserted when APU chip select from config is high AND the peripheral address targets APU registers.
     // wire apu_cs_signal_for_direct_access = apu_cs_config_bit && (address > 6'h0 && address <= 6'hF);
