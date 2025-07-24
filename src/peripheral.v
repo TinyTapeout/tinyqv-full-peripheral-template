@@ -192,22 +192,22 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
 
-    // // reg_configuration0
-    // // logic apu_q1_synced_reg_configuration0;
-    // // logic apu_synced_reg_configuration0;
-    // // always @(posedge cpu_phi2_internal or negedge rst_n) begin
-    // //     if (!rst_n) begin
-    // //         apu_q1_synced_reg_configuration0 <= 1'b0;
-    // //         apu_synced_reg_configuration0 <= 1'b0;
-    // //     end else begin
-    // //         // Synchronize data_read from 64MHz domain to PHI2 domain
-    // //         {apu_synced_reg_configuration0, apu_q1_synced_reg_configuration0} = {apu_q1_synced_reg_configuration0, reg_configuration0};
-    // //     end
-    // // end
+    // reg_configuration0
+    logic [7:0] apu_q1_synced_reg_configuration0;
+    logic [7:0] apu_synced_reg_configuration0;
+    always @(posedge cpu_phi2_internal or negedge rst_n) begin
+        if (!rst_n) begin
+            apu_q1_synced_reg_configuration0 <= 1'b0;
+            apu_synced_reg_configuration0 <= 1'b0;
+        end else begin
+            // Synchronize data_read from 64MHz domain to PHI2 domain
+            {apu_synced_reg_configuration0, apu_q1_synced_reg_configuration0} = {apu_q1_synced_reg_configuration0, reg_configuration0};
+        end
+    end
 
-    // // reg_configuration1
-    // // reg_status0
-    // // reg_data_input
+    // reg_configuration1
+    // reg_status0
+    // reg_data_input
 
     /* --- NES APU Instance --- */
     APU apu(
