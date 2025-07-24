@@ -179,20 +179,18 @@ module tqvp_fjpolo_rv2a03 (
     end
     assign apu_data_in = apu_synced_data_in;
 
-    // // address
-    // wire  [5:0] apu_address;
-    // logic [5:0] apu_q1_synced_address;
-    // logic [5:0] apu_synced_address;
-    // always @(posedge cpu_phi2_internal or negedge rst_n) begin
-    //     if (!rst_n) begin
-    //         apu_q1_synced_address <= 1'b0;
-    //         apu_synced_address <= 1'b0;
-    //     end else begin
-    //         // Synchronize address from 64MHz domain to PHI2 domain
-    //         {apu_synced_address, apu_q1_synced_address} = {apu_q1_synced_address, address};
-    //     end
-    // end
-    // assign apu_address = apu_synced_address;
+    // address
+    logic [5:0] apu_q1_synced_address;
+    logic [5:0] apu_synced_address;
+    always @(posedge cpu_phi2_internal or negedge rst_n) begin
+        if (!rst_n) begin
+            apu_q1_synced_address <= 1'b0;
+            apu_synced_address <= 1'b0;
+        end else begin
+            // Synchronize address from 64MHz domain to PHI2 domain
+            {apu_synced_address, apu_q1_synced_address} = {apu_q1_synced_address, address};
+        end
+    end
 
     // // reg_configuration0
     // // logic apu_q1_synced_reg_configuration0;
