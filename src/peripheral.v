@@ -219,6 +219,20 @@ module tqvp_fjpolo_rv2a03 (
     // end
 
     // reg_status0
+    wire  [7:0] apu_status0_wire;
+    logic [7:0] apu_q1_synced_status0;
+    logic [7:0] apu_synced_status0;
+    always @(posedge cpu_phi2_internal or negedge rst_n) begin
+        if (!rst_n) begin
+            apu_q1_synced_status0 <= 8'h0;
+            apu_synced_status0 <= 8'h0;
+        end else begin
+            // Synchronize reg_status0[7:0] from 64MHz domain to PHI2 domain
+            {apu_synced_status0, apu_q1_synced_status0} = {apu_q1_synced_status0, reg_status0[7:0]};
+        end
+    end
+    assign apu_status0_wire = apu_synced_status0;
+
     // reg_data_input
 
     /* --- NES APU Instance --- */
