@@ -118,20 +118,52 @@ module tqvp_fjpolo_rv2a03 (
     assign apu_address_for_module = ((address >= 6'h0)&&(address <= 6'hF)) ? {2'b0, 8'h40, address} : 16'h0000;
 
     // APU.WR: 1 for Write
-    wire apu_wr_signal =   (data_write_n == 2'b10) ? 1'b1 :     // 32-bit write
-                        (data_write_n == 2'b01) ? 1'b1 :        // 16-bit write
-                        (data_write_n == 2'b00) ? 1'b1 :        // 8-bit write
-                        1'b0;                                   // 2'b11 - No write
+    wire apu_wr_signal_RVdomain =   (data_write_n == 2'b10) ? 1'b1 :     // 32-bit write
+                                    (data_write_n == 2'b01) ? 1'b1 :        // 16-bit write
+                                    (data_write_n == 2'b00) ? 1'b1 :        // 8-bit write
+                                    1'b0;                                   // 2'b11 - No write
 
     // APU.RW: 1 for Read
-    wire apu_rw_signal =    (data_read_n == 2'b10) ? 1'b1 :    // 32-bit read
-                            (data_read_n == 2'b01) ? 1'b1 :    // 16-bit read
-                            (data_read_n == 2'b00) ? 1'b1 :    // 8-bit read
-                            1'b0;                              // 2'b11 - No read
+    wire apu_rw_signal_RVdomain =   (data_read_n == 2'b10) ? 1'b1 :    // 32-bit read
+                                    (data_read_n == 2'b01) ? 1'b1 :    // 16-bit read
+                                    (data_read_n == 2'b00) ? 1'b1 :    // 8-bit read
+                                    1'b0;                              // 2'b11 - No read
 
 
     // // APU.CS: Asserted when APU chip select from config is high AND the peripheral address targets APU registers.
     // wire apu_cs_signal_DA = apu_cs_config_bit && ((address >= 6'h0)&&(address <= 6'hF));
+
+    /* ⚠⚠⚠ CDC ⚠⚠⚠ */
+    // apu_wr_signal
+    logic apu_q1_synced_data_wr;
+    logic apu_synced_data_wr;
+    always @(posedge cpu_phi2_internal or negedge rst_n) begin
+        if (!rst_n) begin
+            apu_q1_synced_data_wr <= 1'b0;
+            apu_synced_data_wr <= 1'b0;
+        end else begin
+            // Synchronize data_write from 64MHz domain to PHI2 domain
+            // apu_q1_synced_data_wr <= apu_wr_signal_RVdomain;         // Metastable signal
+            // apu_synced_data_wr <= apu_q1_synced_data_wr;    // Synchronized signal
+            {apu_synced_data_wr, apu_q1_synced_data_wr} = {apu_q1_synced_data_wr, apu_wr_signal_RVdomain};
+        end
+    end
+    assign apu_wr_signal = ~apu_synced_data_wr;
+    // apu_rw_signal
+    logic apu_q1_synced_data_rw;
+    logic apu_synced_data_rw;
+    always @(posedge cpu_phi2_internal or negedge rst_n) begin
+        if (!rst_n) begin
+            apu_q1_synced_data_rw <= 1'b0;
+            apu_synced_data_rw <= 1'b0;
+        end else begin
+            // Synchronize data_read from 64MHz domain to PHI2 domain
+            // apu_q1_synced_data_rw <= apu_rw_signal_RVdomain;         // Metastable signal
+            // apu_synced_data_rw <= apu_q1_synced_data_rw;    // Synchronized signal
+            {apu_synced_data_rw, apu_q1_synced_data_rw} = {apu_q1_synced_data_rw, apu_rw_signal_RVdomain};
+        end
+    end
+    assign apu_rw_signal = ~apu_synced_data_rw;
 
     /* --- NES APU Instance --- */
     APU apu(
