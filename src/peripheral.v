@@ -170,8 +170,8 @@ module tqvp_fjpolo_rv2a03 (
     logic [7:0] apu_synced_data_in;
     always @(posedge cpu_phi2_internal or negedge rst_n) begin
         if (!rst_n) begin
-            apu_q1_synced_data_in <= 1'b0;
-            apu_synced_data_in <= 1'b0;
+            apu_q1_synced_data_in <= 8'h0;
+            apu_synced_data_in <= 8'h0;
         end else begin
             // Synchronize data_in[7:0] from 64MHz domain to PHI2 domain
             {apu_synced_data_in, apu_q1_synced_data_in} = {apu_q1_synced_data_in, data_in[7:0]};
@@ -184,8 +184,8 @@ module tqvp_fjpolo_rv2a03 (
     logic [5:0] apu_synced_address;
     always @(posedge cpu_phi2_internal or negedge rst_n) begin
         if (!rst_n) begin
-            apu_q1_synced_address <= 1'b0;
-            apu_synced_address <= 1'b0;
+            apu_q1_synced_address <= 6'h0;
+            apu_synced_address <= 6'h0;
         end else begin
             // Synchronize address from 64MHz domain to PHI2 domain
             {apu_synced_address, apu_q1_synced_address} = {apu_q1_synced_address, address};
@@ -197,8 +197,8 @@ module tqvp_fjpolo_rv2a03 (
     logic [7:0] apu_synced_reg_configuration0;
     always @(posedge cpu_phi2_internal or negedge rst_n) begin
         if (!rst_n) begin
-            apu_q1_synced_reg_configuration0 <= 1'b0;
-            apu_synced_reg_configuration0 <= 1'b0;
+            apu_q1_synced_reg_configuration0 <= 8'h0;
+            apu_synced_reg_configuration0 <= 8'h0;
         end else begin
             // Synchronize data_read from 64MHz domain to PHI2 domain
             {apu_synced_reg_configuration0, apu_q1_synced_reg_configuration0} = {apu_q1_synced_reg_configuration0, reg_configuration0};
@@ -206,6 +206,18 @@ module tqvp_fjpolo_rv2a03 (
     end
 
     // reg_configuration1
+    logic [7:0] apu_q1_synced_reg_configuration1;
+    logic [7:0] apu_synced_reg_configuration1;
+    always @(posedge cpu_phi2_internal or negedge rst_n) begin
+        if (!rst_n) begin
+            apu_q1_synced_reg_configuration1 <= 8'h0;
+            apu_synced_reg_configuration1 <= 8'h0;
+        end else begin
+            // Synchronize data_read from 64MHz domain to PHI2 domain
+            {apu_synced_reg_configuration1, apu_q1_synced_reg_configuration1} = {apu_q1_synced_reg_configuration1, reg_configuration1};
+        end
+    end
+
     // reg_status0
     // reg_data_input
 
