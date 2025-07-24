@@ -124,8 +124,8 @@ module tqvp_fjpolo_rv2a03 (
                         1'b0;                               // 2'b11 - No write
     wire apu_rw_signal = ~data_write;
 
-    // // APU.CS: Asserted when APU chip select from config is high AND the peripheral address targets APU registers.
-    // wire apu_cs_signal_for_direct_access = apu_cs_config_bit && ((address >= 6'h0)&&(address <= 6'hF));
+    // APU.CS: Asserted when APU chip select from config is high AND the peripheral address targets APU registers.
+    wire apu_cs_signal_for_direct_access = apu_cs_config_bit && ((address >= 6'h0)&&(address <= 6'hF));
 
     /* --- NES APU Instance --- */
     APU apu(
