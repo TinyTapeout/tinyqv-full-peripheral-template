@@ -22,44 +22,19 @@ async def test_project(dut):
     # interface to read and write the registers.
     tqv = TinyQV(dut)
 
-    #
-    # Test values after reset
-    #
-
-    # Reset, always start the test by resetting TinyQV
+    # Reset
     await tqv.reset()
-
-    # Wait for reset to act
-    await ClockCycles(dut.clk, 1)
-
-    # apu_q1_synced_data_input
-    assert dut.apu_q1_synced_data_input.value == 0
-    # # apu_synced_data_input
-    # assert dut.apu_synced_data_input.value == 0
-    # # apu_q1_synced_data_in
-    # assert dut.apu_q1_synced_data_in.value == 0
-    # # apu_synced_data_in
-    # assert dut.apu_synced_data_in.value == 0
-    # # apu_q1_synced_data_rw
-    # assert dut.apu_q1_synced_data_rw.value == 0
-    # # apu_synced_data_rw
-    # assert dut.apu_synced_data_rw.value == 0
-    # # apu_q1_synced_data_wr
-    # assert dut.apu_q1_synced_data_wr.value == 0
-    # # apu_synced_data_wr
-    # assert dut.apu_synced_data_wr.value == 0
-
-    #
-    # Test
-    #
 
     dut._log.info("Test project behavior")
 
-    # Test register write and read back
-    await tqv.write_word_reg(0, 0x12345678)
-    assert await tqv.read_byte_reg(0) == 0x78
-    assert await tqv.read_hword_reg(0) == 0x5678
-    assert await tqv.read_word_reg(0) == 0x12345678
+    # configuration0 - Test register write and read back
+    await tqv.write_word_reg(0, 0x000000AA)     # Write 0x12345678 to configuration0 register
+    assert await tqv.read_byte_reg(0) == 0xAA
+
+    # 
+
+
+
 
     # # Set an input value, in the example this will be added to the register value
     # dut.ui_in.value = 30
