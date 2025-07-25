@@ -284,17 +284,7 @@ module tqvp_fjpolo_rv2a03 (
     end
 
     // The bottom 8 bits of the stored data are added to ui_in and output to uo_out.
-    assign uo_out = example_data[7:0] + ui_in;
-
-    // Address 0 reads the example data register.  
-    // Address 4 reads ui_in
-    // All other addresses read 0.
-    assign data_out = (address == 6'h0) ? example_data :
-                      (address == 6'h4) ? {24'h0, ui_in} :
-                      32'h0;
-
-
-                      
+    assign uo_out = example_data[7:0] + ui_in;                    
 
     // configuration0 register
     always @(posedge clk) begin
@@ -307,6 +297,13 @@ module tqvp_fjpolo_rv2a03 (
             end
         end
     end
+
+
+    // data_out
+    assign data_out =   (address == 6'h0) ? example_data :
+                        (address == 6'h11) ? {24'h0, reg_configuration0} :
+                        (address == 6'h4) ? {24'h0, ui_in} :
+                        32'h0;
     
     // // // // // Address 0 reads the example data register.  
     // // // // // Address 4 reads ui_in
