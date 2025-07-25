@@ -296,19 +296,17 @@ module tqvp_fjpolo_rv2a03 (
 
                       
 
-    // // // // // configuration0 register
-    // // // // reg [32:0] example_data
-    // // // // always @(posedge clk) begin
-    // // // //     if (!rst_n) begin
-    // // // //         example_data <= 0;
-    // // // //     end else begin
-    // // // //         if (address == 6'h11) begin
-    // // // //             if (data_write_n != 2'b11)              reg_configuration0[7:0]   <= data_in[7:0];
-    // // // //             // if (data_write_n[1] != data_write_n[0]) reg_configuration0[15:8]  <= data_in[15:8];
-    // // // //             // if (data_write_n == 2'b10)              reg_configuration0[31:16] <= data_in[31:16];
-    // // // //         end
-    // // // //     end
-    // // // // end
+    // configuration0 register
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            reg_configuration0 <= 0;
+        end else begin
+            if (address == 6'h11) begin
+                if (data_write_n != 2'b11)
+                    reg_configuration0 <= data_in[7:0];
+            end
+        end
+    end
     
     // // // // // Address 0 reads the example data register.  
     // // // // // Address 4 reads ui_in
