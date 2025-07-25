@@ -22,8 +22,33 @@ async def test_project(dut):
     # interface to read and write the registers.
     tqv = TinyQV(dut)
 
-    # Reset
+    #
+    # Test values after reset
+    #
+
+    # Reset, always start the test by resetting TinyQV
     await tqv.reset()
+
+    # apu_q1_synced_data_input
+    assert dut.apu_q1_synced_data_input.value == 0
+    # # apu_synced_data_input
+    # assert dut.apu_synced_data_input.value == 0
+    # # apu_q1_synced_data_in
+    # assert dut.apu_q1_synced_data_in.value == 0
+    # # apu_synced_data_in
+    # assert dut.apu_synced_data_in.value == 0
+    # # apu_q1_synced_data_rw
+    # assert dut.apu_q1_synced_data_rw.value == 0
+    # # apu_synced_data_rw
+    # assert dut.apu_synced_data_rw.value == 0
+    # # apu_q1_synced_data_wr
+    # assert dut.apu_q1_synced_data_wr.value == 0
+    # # apu_synced_data_wr
+    # assert dut.apu_synced_data_wr.value == 0
+
+    #
+    # Test
+    #
 
     dut._log.info("Test project behavior")
 
