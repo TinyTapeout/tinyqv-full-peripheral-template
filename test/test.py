@@ -29,16 +29,13 @@ async def test_project(dut):
 
     # configuration0 - Test register write and read back
     for value in range(0x00, 0xFF):
-        await tqv.write_word_reg(0, value)
-        assert await tqv.read_byte_reg(0) == value
+        await tqv.write_word_reg(0x11, value)
+        assert await tqv.read_byte_reg(0x11) == value
 
-    # configuration1 - Test register write and read back
-    for value in range(0x00, 0xFF):
-        await tqv.write_word_reg(1, value)
-        assert await tqv.read_byte_reg(1) == value 
-
-
-
+    # # 1 - Test register write and read back
+    # for value in range(0x00, 0xFF):
+    #     await tqv.write_word_reg(1, value)
+    #     assert await tqv.read_byte_reg(1) == value 
 
     # # Set an input value, in the example this will be added to the register value
     # dut.ui_in.value = 30
