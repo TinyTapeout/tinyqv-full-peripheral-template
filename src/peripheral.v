@@ -282,6 +282,7 @@ module tqvp_fjpolo_rv2a03 (
     end
 
     // configuration0 register
+    reg [32:0] example_data;
     always @(posedge clk) begin
         if (!rst_n) begin
             example_data <= 0;
