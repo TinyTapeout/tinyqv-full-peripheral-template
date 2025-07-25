@@ -298,10 +298,22 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
 
+    // configuration1 register
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            reg_configuration1 <= 0;
+        end else begin
+            if (address == 6'h12) begin
+                if (data_write_n != 2'b11)
+                    reg_configuration1 <= data_in[7:0];
+            end
+        end
+    end
 
     // data_out
     assign data_out =   (address == 6'h0) ? example_data :
                         (address == 6'h11) ? {24'h0, reg_configuration0} :
+                        (address == 6'h12) ? {24'h0, reg_configuration1} :
                         (address == 6'h4) ? {24'h0, ui_in} :
                         32'h0;
     
