@@ -238,26 +238,26 @@ module tqvp_fjpolo_rv2a03 (
         .MMC5(),
         .clk(apu_sound_clk),
         .PHI2(apu_phi2_clk),
-        .ce(apu_ce_config_bit),
+        .ce(),
         .reset(!rst_n),
         .cold_reset(!rst_n),
-        .allow_us(apu_us),
-        .PAL(apu_pal),
+        .allow_us(),
+        .PAL(),
         .ADDR(apu_q1_synced_address),
         .DIN(apu_synced_data_in),
         .RW(apu_rw_signal),
-        .CS(1'b1),
-        .audio_channels(apu_audio_channels),
+        .CS(),
+        .audio_channels(),
         .DmaData(),         // Stubbed input
-        .odd_or_even(apu_even),
+        .odd_or_even(),
         .DmaAck(),          // Stubbed input
         .DOUT(),
         .Sample(),
         .DmaReq(),          // Output, but ignored for now
         .DmaAddr(),         // Output, but ignored for now
         .IRQ(),             // Captured in status register
-        .apu_enhanced_ce(apu_enhanced),
-        .apu_mapper_saturates(apu_mapper_saturates),
+        .apu_enhanced_ce(),
+        .apu_mapper_saturates(),
         .o_ce()             // APU's output enable (when Sample is valid)
     );
 
