@@ -267,8 +267,10 @@ module tqvp_fjpolo_rv2a03 (
 
 
 
-    
+    // TODO: Clean this up
+
     // Implement a 32-bit read/write register at address 0
+    reg [31:0] example_data;
     always @(posedge clk) begin
         if (!rst_n) begin
             example_data <= 0;
@@ -281,35 +283,45 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
 
-    // configuration0 register
-    reg [32:0] example_data;
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            example_data <= 0;
-        end else begin
-            if (address == 6'h11) begin
-                if (data_write_n != 2'b11)              reg_configuration0[7:0]   <= data_in[7:0];
-                // if (data_write_n[1] != data_write_n[0]) reg_configuration0[15:8]  <= data_in[15:8];
-                // if (data_write_n == 2'b10)              reg_configuration0[31:16] <= data_in[31:16];
-            end
-        end
-    end
-    
+    // The bottom 8 bits of the stored data are added to ui_in and output to uo_out.
+    assign uo_out = example_data[7:0] + ui_in;
+
     // Address 0 reads the example data register.  
     // Address 4 reads ui_in
     // All other addresses read 0.
-    assign data_out =   (address == 6'h00) ? example_data :
-                        (address == 6'h11) ? {24'h0, reg_configuration0} :
-                        (address == 6'h04) ? {24'h0, ui_in} :
-                        32'h0;
+    assign data_out = (address == 6'h0) ? example_data :
+                      (address == 6'h4) ? {24'h0, ui_in} :
+                      32'h0;
+
+
+                      
+
+    // // // // // configuration0 register
+    // // // // reg [32:0] example_data
+    // // // // always @(posedge clk) begin
+    // // // //     if (!rst_n) begin
+    // // // //         example_data <= 0;
+    // // // //     end else begin
+    // // // //         if (address == 6'h11) begin
+    // // // //             if (data_write_n != 2'b11)              reg_configuration0[7:0]   <= data_in[7:0];
+    // // // //             // if (data_write_n[1] != data_write_n[0]) reg_configuration0[15:8]  <= data_in[15:8];
+    // // // //             // if (data_write_n == 2'b10)              reg_configuration0[31:16] <= data_in[31:16];
+    // // // //         end
+    // // // //     end
+    // // // // end
     
-    
+    // // // // // Address 0 reads the example data register.  
+    // // // // // Address 4 reads ui_in
+    // // // // // All other addresses read 0.
+    // // // // assign data_out =   (address == 6'h00) ? example_data :
+    // // // //                     (address == 6'h11) ? {24'h0, reg_configuration0} :
+    // // // //                     (address == 6'h04) ? {24'h0, ui_in} :
+    // // // //                     32'h0;
 
 
 
 
 
-    // TODO: Clean this up
     // All reads complete in 1 clock
     assign data_ready = 1;
     
@@ -331,7 +343,6 @@ module tqvp_fjpolo_rv2a03 (
         last_ui_in_6 <= ui_in[6];
     end
 
-    assign uo_out = ui_in;
     assign user_interrupt = example_interrupt;
 
     // List all unused inputs to prevent warnings
