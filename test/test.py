@@ -29,6 +29,9 @@ async def test_project(dut):
     # Reset, always start the test by resetting TinyQV
     await tqv.reset()
 
+    # Wait for reset to act
+    await ClockCycles(dut.clk, 1)
+
     # apu_q1_synced_data_input
     assert dut.apu_q1_synced_data_input.value == 0
     # # apu_synced_data_input
