@@ -27,9 +27,14 @@ async def test_project(dut):
 
     dut._log.info("Test project behavior")
 
+    # Register @0x00 - Test register write and read back
+    for value in range(0x00, 0xFF):
+        await tqv.write_byte_reg(0x00, value)
+        assert await tqv.read_byte_reg(0x00) == value
+
     # configuration0 - Test register write and read back
     for value in range(0x00, 0xFF):
-        await tqv.write_word_reg(0x11, value)
+        await tqv.write_byte_reg(0x11, value)
         assert await tqv.read_byte_reg(0x11) == value
 
     # # 1 - Test register write and read back

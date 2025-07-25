@@ -261,14 +261,35 @@ module tqvp_fjpolo_rv2a03 (
         .o_ce()             // APU's output enable (when Sample is valid)
     );
 
-    /* --- Register Logic --- */
-    // Write to reg_configuration0
+
+
+
+
+
+
+    
+    // Implement a 32-bit read/write register at address 0
     always @(posedge clk) begin
         if (!rst_n) begin
-            reg_configuration0 <= 0;
+            example_data <= 0;
+        end else begin
+            if (address == 6'h0) begin
+                if (data_write_n != 2'b11)              example_data[7:0]   <= data_in[7:0];
+                if (data_write_n[1] != data_write_n[0]) example_data[15:8]  <= data_in[15:8];
+                if (data_write_n == 2'b10)              example_data[31:16] <= data_in[31:16];
+            end
+        end
+    end
+
+    // configuration0 register
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            example_data <= 0;
         end else begin
             if (address == 6'h11) begin
-                reg_configuration0 <= data_in[7:0];
+                if (data_write_n != 2'b11)              reg_configuration0[7:0]   <= data_in[7:0];
+                // if (data_write_n[1] != data_write_n[0]) reg_configuration0[15:8]  <= data_in[15:8];
+                // if (data_write_n == 2'b10)              reg_configuration0[31:16] <= data_in[31:16];
             end
         end
     end
@@ -276,9 +297,11 @@ module tqvp_fjpolo_rv2a03 (
     // Address 0 reads the example data register.  
     // Address 4 reads ui_in
     // All other addresses read 0.
-    assign data_out =   (address == 6'h11) ? {24'h0, reg_configuration0} :
-                        (address == 6'h4) ? {24'h0, ui_in} :
+    assign data_out =   (address == 6'h00) ? example_data :
+                        (address == 6'h11) ? {24'h0, reg_configuration0} :
+                        (address == 6'h04) ? {24'h0, ui_in} :
                         32'h0;
+    
     
 
 
