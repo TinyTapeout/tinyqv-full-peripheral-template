@@ -75,7 +75,12 @@ module tqvp_fjpolo_rv2a03 (
     reg [7:0] reg_data_output_lsb;
     reg [7:0] reg_status0;
 
-    initial reg_status0 = 8'h00; // Initialize status register to 0
+    initial reg_configuration0 = 8'h00;     // Initialize configuration register to 0
+    initial reg_configuration1 = 8'h00;     // Initialize configuration register to 0
+    initial reg _data_input = 8'h00;        // Initialize data input register to 0
+    initial reg _data_output_msb = 8'h00;   // Initialize data output MSB register to 0
+    initial reg _data_output_lsb = 8'h00;   // Initialize data output L
+    initial reg_status0 = 8'h00;            // Initialize status register to 0
 
     /* --- Internal Wires/Signals --- */
     // Signals extracted from Configuration0 (for APU module)
