@@ -303,7 +303,7 @@ module tqvp_fjpolo_rv2a03 (
             reg_configuration1 <= 0;
         end else begin
             if (address == 6'h12) begin
-                if (data_write_n != 2'b12)
+                if (data_write_n != 6'b12)
                     reg_configuration1 <= data_in[7:0];
             end
         end
