@@ -37,6 +37,16 @@ async def test_project(dut):
         await tqv.write_byte_reg(0x11, value)
         assert await tqv.read_byte_reg(0x11) == value
 
+    # configuration1 - Test register write and read back
+    for value in range(0x00, 0xFF):
+        await tqv.write_byte_reg(0x12, value)
+        assert await tqv.read_byte_reg(0x12) == value
+
+    # reg_data_input - Test register write and read back
+    for value in range(0x00, 0xFF):
+        await tqv.write_byte_reg(0x20, value)
+        assert await tqv.read_byte_reg(0x20) == value
+
     # # 1 - Test register write and read back
     # for value in range(0x00, 0xFF):
     #     await tqv.write_word_reg(1, value)

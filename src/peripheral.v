@@ -303,8 +303,20 @@ module tqvp_fjpolo_rv2a03 (
             reg_configuration1 <= 0;
         end else begin
             if (address == 6'h12) begin
-                if (data_write_n != 2'b11)
+                if (data_write_n != 2'b12)
                     reg_configuration1 <= data_in[7:0];
+            end
+        end
+    end
+
+    // data_in register
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            reg_data_input <= 0;
+        end else begin
+            if (address == 6'h20) begin
+                if (data_write_n != 2'b20)
+                    reg_data_input <= data_in[7:0];
             end
         end
     end
@@ -314,6 +326,7 @@ module tqvp_fjpolo_rv2a03 (
                         (address == 6'h11) ? {24'h0, reg_configuration0} :
                         (address == 6'h12) ? {24'h0, reg_configuration1} :
                         (address == 6'h13) ? {24'h0, reg_status0} :
+                        (address == 6'h20) ? {24'h0, reg_data_input} :
                         (address == 6'h04) ? {24'h0, ui_in} :
                         32'h0;
 
