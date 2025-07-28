@@ -261,14 +261,6 @@ module tqvp_fjpolo_rv2a03 (
         .o_ce()             // APU's output enable (when Sample is valid)
     );
 
-
-
-
-
-
-
-    // TODO: Clean this up
-
     // Implement a 32-bit read/write register at address 0
     reg [31:0] example_data;
     always @(posedge clk) begin
@@ -314,20 +306,9 @@ module tqvp_fjpolo_rv2a03 (
     assign data_out =   (address == 6'h0) ? example_data :
                         (address == 6'h11) ? {24'h0, reg_configuration0} :
                         (address == 6'h12) ? {24'h0, reg_configuration1} :
+                        (address == 6'h13) ? {24'h0, reg_status0} :
                         (address == 6'h4) ? {24'h0, ui_in} :
                         32'h0;
-    
-    // // // // // Address 0 reads the example data register.  
-    // // // // // Address 4 reads ui_in
-    // // // // // All other addresses read 0.
-    // // // // assign data_out =   (address == 6'h00) ? example_data :
-    // // // //                     (address == 6'h11) ? {24'h0, reg_configuration0} :
-    // // // //                     (address == 6'h04) ? {24'h0, ui_in} :
-    // // // //                     32'h0;
-
-
-
-
 
     // All reads complete in 1 clock
     assign data_ready = 1;
