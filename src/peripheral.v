@@ -75,6 +75,8 @@ module tqvp_fjpolo_rv2a03 (
     reg [7:0] reg_data_output_lsb;
     reg [7:0] reg_status0;
 
+    initial reg_status0 = 8'h00; // Initialize status register to 0
+
     /* --- Internal Wires/Signals --- */
     // Signals extracted from Configuration0 (for APU module)
     wire apu_ce_config_bit    = reg_configuration0[0];
@@ -306,8 +308,8 @@ module tqvp_fjpolo_rv2a03 (
     assign data_out =   (address == 6'h0) ? example_data :
                         (address == 6'h11) ? {24'h0, reg_configuration0} :
                         (address == 6'h12) ? {24'h0, reg_configuration1} :
-                        (address == 6'h13) ? {24'h0, reg_configuration1} :
-                        (address == 6'h4) ? {24'h0, ui_in} :
+                        (address == 6'h13) ? {24'h0, reg_status0} :
+                        (address == 6'h04) ? {24'h0, ui_in} :
                         32'h0;
 
     // All reads complete in 1 clock
