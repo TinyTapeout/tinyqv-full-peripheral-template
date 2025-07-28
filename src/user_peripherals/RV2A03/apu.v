@@ -1,7 +1,6 @@
 // Rewritten 6/4/2020 by Kitrinx
 // This code is GPLv3.
 
-/*verilator lint_off*/
 module LenCounterUnit (
     input  logic       clk,
     input  logic       reset,
@@ -2665,4 +2664,3 @@ assign sample = !apu_enhanced_ce        ? sample_normal :
                 sample_mix_normal_enhanced_tri;
 
 endmodule
-/*verilator lint_on*/
