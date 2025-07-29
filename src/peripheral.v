@@ -238,7 +238,7 @@ module tqvp_fjpolo_rv2a03 (
 
     /* --- NES APU Instance --- */
     APU apu(
-        .MMC5(),
+        .MMC5(apu_is_mmc5),
         .clk(apu_sound_clk),
         .PHI2(apu_phi2_clk),
         .ce(apu_ce),
