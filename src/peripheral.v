@@ -18,16 +18,16 @@
  //    0x00 - Example Register - Read/Write
  //    0x01 - 0x0F - APU Register Direct Access (Pass-through for NES APU registers 0x4001-0x400F) - Read/Write
  //    0x10 - Configuration0 - Read/Write
- //       | b7           | b6                  | b5                   | b4   | b3 | b2  | b1 | b0 |
- //       | Enhanced APU |  Audio Channels MSB | Audio Channels LSB   | Even | CS | PAL | US | CE |
+ //       | b7           | b6  | b5 | b4   | b3 | b2  | b1 | b0 |
+ //       | Enhanced APU |     |    | Even | CS | PAL | US | CE |
  //
  //    0x11 - Configuration1 - Read/Write
  //       | b7                  | b6 | b5 | b4 | b3 | b2 | b1 | b0 |
  //       | PMOD PWM Out enable |  |  |  |  |  | isMMC5 | APU Mapper saturates |
  //
  //    0x12 - Status0 - Read
- //       | b7 | b6 | b5 | b4 | b3 | b2 | b1 | b0 |
- //       |    |    |    |    |    |    | IRQ | Data Output Ready |
+ //       | b7 |          b6        |        b5          |       b4           |          b3        |         b2         |         b1         | b0  |
+ //       |    |  Audio Channel[4]  |  Audio Channel[3]  |  Audio Channel[2]  |  Audio Channel[1]  |  Audio Channel[0]  | IRQ | Data Output Ready |
  //
  //    0x20 - Data Input - Write/Read (Data to be written to APU's DIN port for commands/writes)
  //
@@ -89,12 +89,12 @@ module tqvp_fjpolo_rv2a03 (
     wire apu_us                     = reg_configuration0[2];
     wire apu_cs                     = reg_configuration0[3];
     wire apu_even                   = reg_configuration0[4];  // TODO: Use after phi2 module is done
-    wire [1:0] apu_audio_channels   = {reg_configuration0[6], reg_configuration0[5]};
     wire apu_enhanced               = reg_configuration0[7];
 
     // Signals extracted from Configuration1 (for APU module)
-    wire apu_mapper_saturates = reg_configuration1[0];
-    wire apu_is_mmc5          = reg_configuration1[1];
+    wire apu_mapper_saturates       = reg_configuration1[0];
+    wire apu_is_mmc5                = reg_configuration1[1];
+    wire [4:0] apu_audio_channels   = reg_configuration1[6:2];
     // PMOD PWM output
     // wire apu_pmod_pwm_out_enable = reg_configuration1[7];
 
@@ -111,13 +111,91 @@ module tqvp_fjpolo_rv2a03 (
         .clk_out(apu_sound_clk) // 1.789773 MHz
     );
 
-    /* --- Clock Divider for PHI2 Clock --- */
-    logic apu_phi2_clk;
-    fractional_divider phi2_clk_divider (
-        .clk_in(clk),
-        .rst_n(rst_n),
-        .clk_out(apu_phi2_clk) // 1.789773 MHz
-    );
+    /* Clock magic */
+
+    // odd or even apu cycle, AKA div_apu or apu_/clk2. This is actually not 50% duty cycle. It is high for 18
+    // master cycles and low for 6 master cycles. It is considered active when low or "even".
+    reg odd_or_even = 1; // 1 == odd, 0 == even
+
+    // XXX: Because we are using div4 clock divider for PAL, master clock should be 21.2813696
+    // Clock Dividers
+    wire [4:0] div_cpu_n = 5'd12;
+    wire [2:0] div_ppu_n = 3'd4;
+
+    // Counters
+    reg [4:0] div_cpu = 5'd1;
+    reg [2:0] div_ppu = 3'd1;
+    reg [1:0] div_sys = 2'd0;
+
+    // CE's
+    wire cpu_ce  = (div_cpu == div_cpu_n);
+    wire ppu_ce  = (div_ppu == div_ppu_n);
+    wire apu_phi2_clk = (div_cpu > 4 && div_cpu < div_cpu_n);
+
+    // The infamous NES jitter is important for accuracy, but wreks havok on modern devices and scalers,
+    // so what I do here is pause the whole system for one PPU clock and insert a "fake" ppu clock to
+    // replace the missing pixel. Thus the system runs accurately (ableit a few nanoseconds per frame slower)
+    // but all video devices stay happy.
+
+    wire skip_pixel;
+    reg freeze_clocks = 0;
+    reg [4:0] faux_pixel_cnt;
+
+    wire use_fake_h = freeze_clocks && faux_pixel_cnt < 6;
+    reg [1:0] ppu_tick = 0;
+
+    reg last_apu_pal;
+    reg [2:0] cpu_tick_count;
+
+    wire skip_ppu_cycle = (cpu_tick_count == 4) && (ppu_tick == 0);
+
+    always @(posedge apu_sound_clk) begin
+        if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
+            if (~skip_ppu_cycle)
+                div_cpu <= cpu_ce || (ppu_ce && div_cpu > div_cpu_n) ? 1'b1 : div_cpu + 1'b1;
+
+            div_ppu <= ppu_ce ? 1'b1 : div_ppu + 1'b1;
+
+            // reset the ticker on the first ppu tick at or after a cpu tick.
+            if (cpu_ce)
+                ppu_tick <= 0;
+            else if (ppu_ce)
+                ppu_tick <= ppu_tick + 1'b1;
+        end
+
+        // Add one extra PPU tick every 5 cpu cycles for PAL.
+        if ((cpu_ce)&&(apu_pal))
+            cpu_tick_count <= cpu_tick_count[2] ? 3'd0 : cpu_tick_count + 1'b1;
+        
+        // SDRAM Clock
+        div_sys <= div_sys + 1'b1;
+        
+        // De-Jitter shenanigans
+        if (faux_pixel_cnt == 3)
+            freeze_clocks <= 1'b0;
+
+        if (|faux_pixel_cnt)
+            faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
+
+        if (skip_pixel && (faux_pixel_cnt == 0)) begin
+            freeze_clocks <= 1'b1;
+            faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
+        end
+
+        if (~rst_n)
+            odd_or_even <= 1'b1;
+        else if (cpu_ce) 
+            odd_or_even <= ~odd_or_even;
+
+        // Realign if the system type changes.
+        last_apu_pal <= apu_pal;
+        if (last_apu_pal != apu_pal) begin
+            div_cpu <= 5'd1;
+            div_ppu <= 3'd1;
+            div_sys <= 0;
+            cpu_tick_count <= 0;
+        end
+    end
 
     // /* --- APU Register Access Mapping --- */
     // // Ensure apu_address_for_module is 16-bit by padding 0x40 to 6 bits
