@@ -169,49 +169,49 @@ module tqvp_fjpolo_rv2a03 (
             freeze_clocks <= 0;
             div_ppu <= 0;
         end else begin
-            if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
-                if (~skip_ppu_cycle)
-                    div_cpu <= cpu_ce || (ppu_ce && div_cpu > div_cpu_n) ? 1'b1 : div_cpu + 1'b1;
+            // if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
+            //     if (~skip_ppu_cycle)
+            //         div_cpu <= cpu_ce || (ppu_ce && div_cpu > div_cpu_n) ? 1'b1 : div_cpu + 1'b1;
 
-                div_ppu <= ppu_ce ? 1'b1 : div_ppu + 1'b1;
+            //     div_ppu <= ppu_ce ? 1'b1 : div_ppu + 1'b1;
 
-                // reset the ticker on the first ppu tick at or after a cpu tick.
-                if (cpu_ce)
-                    ppu_tick <= 0;
-                else if (ppu_ce)
-                    ppu_tick <= ppu_tick + 1'b1;
-            end
+            //     // reset the ticker on the first ppu tick at or after a cpu tick.
+            //     if (cpu_ce)
+            //         ppu_tick <= 0;
+            //     else if (ppu_ce)
+            //         ppu_tick <= ppu_tick + 1'b1;
+            // end
 
-            // Add one extra PPU tick every 5 cpu cycles for PAL.
-            if ((cpu_ce)&&(apu_pal))
-                cpu_tick_count <= cpu_tick_count[2] ? 3'd0 : cpu_tick_count + 1'b1;
+            // // Add one extra PPU tick every 5 cpu cycles for PAL.
+            // if ((cpu_ce)&&(apu_pal))
+            //     cpu_tick_count <= cpu_tick_count[2] ? 3'd0 : cpu_tick_count + 1'b1;
             
-            // SDRAM Clock
-            div_sys <= div_sys + 1'b1;
+            // // SDRAM Clock
+            // div_sys <= div_sys + 1'b1;
             
-            // De-Jitter shenanigans
-            if (faux_pixel_cnt == 3)
-                freeze_clocks <= 1'b0;
+            // // De-Jitter shenanigans
+            // if (faux_pixel_cnt == 3)
+            //     freeze_clocks <= 1'b0;
 
-            if (|faux_pixel_cnt)
-                faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
+            // if (|faux_pixel_cnt)
+            //     faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
 
-            if (skip_pixel && (faux_pixel_cnt == 0)) begin
-                freeze_clocks <= 1'b1;
-                faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
-            end
+            // if (skip_pixel && (faux_pixel_cnt == 0)) begin
+            //     freeze_clocks <= 1'b1;
+            //     faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
+            // end
                 
-            else if (cpu_ce) 
-                odd_or_even <= ~odd_or_even;
+            // else if (cpu_ce) 
+            //     odd_or_even <= ~odd_or_even;
 
-            // Realign if the system type changes.
-            last_apu_pal <= apu_pal;
-            if (last_apu_pal != apu_pal) begin
-                div_cpu <= 5'd1;
-                div_ppu <= 3'd1;
-                div_sys <= 0;
-                cpu_tick_count <= 0;
-            end
+            // // Realign if the system type changes.
+            // last_apu_pal <= apu_pal;
+            // if (last_apu_pal != apu_pal) begin
+            //     div_cpu <= 5'd1;
+            //     div_ppu <= 3'd1;
+            //     div_sys <= 0;
+            //     cpu_tick_count <= 0;
+            // end
         end
     end
 
