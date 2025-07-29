@@ -359,7 +359,9 @@ module tqvp_fjpolo_rv2a03 (
     end
 
     // The bottom 8 bits of the stored data are added to ui_in and output to uo_out.
-    assign uo_out = {ui_in[7:4], apu_phi2_clk, ui_in[1:0]];                    
+    assign uo_out[7:4] = ui_in[7:4];
+    assign uo_out[3]   = apu_phi2_clk;
+    assign uo_out[2:0] = ui_in[2:0];                
 
     // configuration0 register
     always @(posedge clk) begin
