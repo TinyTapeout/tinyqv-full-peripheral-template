@@ -182,12 +182,12 @@ module tqvp_fjpolo_rv2a03 (
                     ppu_tick <= ppu_tick + 1'b1;
             end
 
-            // // Add one extra PPU tick every 5 cpu cycles for PAL.
-            // if ((cpu_ce)&&(apu_pal))
-            //     cpu_tick_count <= cpu_tick_count[2] ? 3'd0 : cpu_tick_count + 1'b1;
+            // Add one extra PPU tick every 5 cpu cycles for PAL.
+            if ((cpu_ce)&&(apu_pal))
+                cpu_tick_count <= cpu_tick_count[2] ? 3'd0 : cpu_tick_count + 1'b1;
             
-            // // SDRAM Clock
-            // div_sys <= div_sys + 1'b1;
+            // SDRAM Clock
+            div_sys <= div_sys + 1'b1;
             
             // // De-Jitter shenanigans
             // if (faux_pixel_cnt == 3)
