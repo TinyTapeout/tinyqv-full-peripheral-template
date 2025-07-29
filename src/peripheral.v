@@ -84,13 +84,13 @@ module tqvp_fjpolo_rv2a03 (
 
     /* --- Internal Wires/Signals --- */
     // Signals extracted from Configuration0 (for APU module)
-    wire apu_ce               = reg_configuration0[0];
-    wire apu_pal              = reg_configuration0[1];
-    wire apu_us               = reg_configuration0[2];
-    wire apu_cs    = reg_configuration0[3];
-    wire apu_even             = reg_configuration0[4];
-    wire [1:0] apu_audio_channels = {reg_configuration0[6], reg_configuration0[5]};
-    wire apu_enhanced         = reg_configuration0[7];
+    wire apu_ce                     = reg_configuration0[0];
+    wire apu_pal                    = reg_configuration0[1];
+    wire apu_us                     = reg_configuration0[2];
+    wire apu_cs                     = reg_configuration0[3];
+    wire apu_even                   = reg_configuration0[4];  // TODO: Use after phi2 module is done
+    wire [1:0] apu_audio_channels   = {reg_configuration0[6], reg_configuration0[5]};
+    wire apu_enhanced               = reg_configuration0[7];
 
     // Signals extracted from Configuration1 (for APU module)
     wire apu_mapper_saturates = reg_configuration1[0];
@@ -250,7 +250,7 @@ module tqvp_fjpolo_rv2a03 (
         .DIN(apu_synced_data_input),
         .RW(apu_rw_signal),
         .CS(apu_cs_signal_DA),
-        .audio_channels(),
+        .audio_channels(apu_audio_channels),
         .DmaData(),         // Stubbed input
         .odd_or_even(),
         .DmaAck(),          // Stubbed input
