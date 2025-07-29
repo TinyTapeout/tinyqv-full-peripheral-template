@@ -121,13 +121,18 @@ module tqvp_fjpolo_rv2a03 (
 
     // XXX: Because we are using div4 clock divider for PAL, master clock should be 21.2813696
     // Clock Dividers
-    wire [4:0] div_cpu_n = 5'd12;
-    wire [2:0] div_ppu_n = 3'd4;
+    wire [4:0] div_cpu_n;
+    initial div_cpu_n = 5'd12;
+    wire [2:0] div_ppu_n;
+    initial div_ppu_n = 3'd4;
 
     // Counters
-    reg [4:0] div_cpu = 5'd1;
-    reg [2:0] div_ppu = 3'd1;
-    reg [1:0] div_sys = 2'd0;
+    reg [4:0] div_cpu;
+    initial div_cpu = 5'd1;
+    reg [2:0] div_ppu;
+    initial div_ppu = 3'd1;
+    reg [1:0] div_sys;
+    initial div_sys = 2'd0;
 
     // CE's
     wire cpu_ce  = (div_cpu == div_cpu_n);
@@ -140,14 +145,19 @@ module tqvp_fjpolo_rv2a03 (
     // but all video devices stay happy.
 
     wire skip_pixel;
-    reg freeze_clocks = 0;
+    reg freeze_clocks;
+    initial freeze_clocks = 0;
     reg [4:0] faux_pixel_cnt;
+    initial faux_pixel_cnt = 0;
 
     wire use_fake_h = freeze_clocks && faux_pixel_cnt < 6;
     reg [1:0] ppu_tick = 0;
+    initial ppu_tick = 0;
 
     reg last_apu_pal;
+    initial last_apu_pal = 0;
     reg [2:0] cpu_tick_count;
+    initial cpu_tick_count = 0;
 
     wire skip_ppu_cycle = (cpu_tick_count == 4) && (ppu_tick == 0);
 
@@ -425,7 +435,6 @@ module tqvp_fjpolo_rv2a03 (
         end else if (address == 6'h8 && data_write_n != 2'b11 && data_in[0]) begin
             example_interrupt <= 0;
         end
-
         last_ui_in_6 <= ui_in[6];
     end
 
