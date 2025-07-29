@@ -198,45 +198,30 @@ module tqvp_fjpolo_rv2a03 (
     end
 
     // // reg_configuration0
-    // logic [7:0] apu_q1_synced_reg_configuration0;
-    // logic [7:0] apu_synced_reg_configuration0;
+    // logic [7:0] apu_q1_synced_configuration0;
+    // logic [7:0] apu_synced_configuration0;
     // always @(posedge apu_phi2_clk or negedge rst_n) begin
     //     if (!rst_n) begin
-    //         apu_q1_synced_reg_configuration0 <= 8'h0;
-    //         apu_synced_reg_configuration0 <= 8'h0;
+    //         apu_q1_synced_configuration0 <= 8'h0;
+    //         apu_synced_configuration0 <= 8'h0;
     //     end else begin
-    //         // Synchronize data_read from 64MHz domain to PHI2 domain
-    //         {apu_synced_reg_configuration0, apu_q1_synced_reg_configuration0} = {apu_q1_synced_reg_configuration0, reg_configuration0};
+    //         // Synchronize reg_configuration0 from 64MHz domain to PHI2 domain
+    //         {apu_synced_configuration0, apu_q1_synced_configuration0} <= {apu_q1_synced_configuration0, reg_configuration0};
     //     end
     // end
 
     // // reg_configuration1
-    // logic [7:0] apu_q1_synced_reg_configuration1;
-    // logic [7:0] apu_synced_reg_configuration1;
+    // logic [7:0] apu_q1_synced_configuration1;
+    // logic [7:0] apu_synced_configuration1;
     // always @(posedge apu_phi2_clk or negedge rst_n) begin
     //     if (!rst_n) begin
-    //         apu_q1_synced_reg_configuration1 <= 8'h0;
-    //         apu_synced_reg_configuration1 <= 8'h0;
+    //         apu_q1_synced_configuration1 <= 8'h0;
+    //         apu_synced_configuration1 <= 8'h0;
     //     end else begin
-    //         // Synchronize data_read from 64MHz domain to PHI2 domain
-    //         {apu_synced_reg_configuration1, apu_q1_synced_reg_configuration1} = {apu_q1_synced_reg_configuration1, reg_configuration1};
+    //         // Synchronize reg_configuration1 from 64MHz domain to PHI2 domain
+    //         {apu_synced_configuration1, apu_q1_synced_configuration1} <= {apu_q1_synced_configuration1, reg_configuration1};
     //     end
     // end
-
-    // // reg_status0
-    // wire  [7:0] apu_status0_wire;
-    // logic [7:0] apu_q1_synced_status0;
-    // logic [7:0] apu_synced_status0;
-    // always @(posedge apu_phi2_clk or negedge rst_n) begin
-    //     if (!rst_n) begin
-    //         apu_q1_synced_status0 <= 8'h0;
-    //         apu_synced_status0 <= 8'h0;
-    //     end else begin
-    //         // Synchronize reg_status0[7:0] from 64MHz domain to PHI2 domain
-    //         {apu_synced_status0, apu_q1_synced_status0} = {apu_q1_synced_status0, reg_status0[7:0]};
-    //     end
-    // end
-    // assign apu_status0_wire = apu_synced_status0;
 
     // reg_data_input
     logic [7:0] apu_q1_synced_data_input;
@@ -260,7 +245,7 @@ module tqvp_fjpolo_rv2a03 (
         .reset(!rst_n),
         .cold_reset(!rst_n),
         .allow_us(),
-        .PAL(),
+        .PAL(apu_pal),
         .ADDR(),
         .DIN(apu_synced_data_input),
         .RW(apu_rw_signal),
