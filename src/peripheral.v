@@ -84,7 +84,7 @@ module tqvp_fjpolo_rv2a03 (
 
     /* --- Internal Wires/Signals --- */
     // Signals extracted from Configuration0 (for APU module)
-    wire apu_ce_config_bit    = reg_configuration0[0];
+    wire apu_ce               = reg_configuration0[0];
     wire apu_pal              = reg_configuration0[1];
     wire apu_us               = reg_configuration0[2];
     wire apu_cs_config_bit    = reg_configuration0[3];
@@ -241,7 +241,7 @@ module tqvp_fjpolo_rv2a03 (
         .MMC5(),
         .clk(apu_sound_clk),
         .PHI2(apu_phi2_clk),
-        .ce(),
+        .ce(apu_ce),
         .reset(!rst_n),
         .cold_reset(!rst_n),
         .allow_us(),
