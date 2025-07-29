@@ -262,7 +262,7 @@ module tqvp_fjpolo_rv2a03 (
         .allow_us(),
         .PAL(),
         .ADDR(),
-        .DIN(apu_synced_data_in),
+        .DIN(apu_synced_data_input),
         .RW(apu_rw_signal),
         .CS(),
         .audio_channels(),
