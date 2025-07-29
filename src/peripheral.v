@@ -169,18 +169,18 @@ module tqvp_fjpolo_rv2a03 (
             freeze_clocks <= 0;
             div_ppu <= 0;
         end else begin
-            // if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
-            //     if (~skip_ppu_cycle)
-            //         div_cpu <= cpu_ce || (ppu_ce && div_cpu > div_cpu_n) ? 1'b1 : div_cpu + 1'b1;
+            if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
+                if (~skip_ppu_cycle)
+                    div_cpu <= cpu_ce || (ppu_ce && div_cpu > div_cpu_n) ? 1'b1 : div_cpu + 1'b1;
 
-            //     div_ppu <= ppu_ce ? 1'b1 : div_ppu + 1'b1;
+                div_ppu <= ppu_ce ? 1'b1 : div_ppu + 1'b1;
 
-            //     // reset the ticker on the first ppu tick at or after a cpu tick.
-            //     if (cpu_ce)
-            //         ppu_tick <= 0;
-            //     else if (ppu_ce)
-            //         ppu_tick <= ppu_tick + 1'b1;
-            // end
+                // reset the ticker on the first ppu tick at or after a cpu tick.
+                if (cpu_ce)
+                    ppu_tick <= 0;
+                else if (ppu_ce)
+                    ppu_tick <= ppu_tick + 1'b1;
+            end
 
             // // Add one extra PPU tick every 5 cpu cycles for PAL.
             // if ((cpu_ce)&&(apu_pal))
