@@ -87,7 +87,7 @@ module tqvp_fjpolo_rv2a03 (
     wire apu_ce               = reg_configuration0[0];
     wire apu_pal              = reg_configuration0[1];
     wire apu_us               = reg_configuration0[2];
-    wire apu_cs_config_bit    = reg_configuration0[3];
+    wire apu_cs    = reg_configuration0[3];
     wire apu_even             = reg_configuration0[4];
     wire [1:0] apu_audio_channels = {reg_configuration0[6], reg_configuration0[5]};
     wire apu_enhanced         = reg_configuration0[7];
@@ -138,7 +138,7 @@ module tqvp_fjpolo_rv2a03 (
 
 
     // // APU.CS: Asserted when APU chip select from config is high AND the peripheral address targets APU registers.
-    // wire apu_cs_signal_DA = apu_cs_config_bit && ((address >= 6'h0)&&(address <= 6'hF));
+    wire apu_cs_signal_DA = apu_cs && ((address >= 6'h0)&&(address <= 6'hF));
 
     /* ⚠⚠⚠ CDC ⚠⚠⚠ */
     // apu_wr_signal_RVdomain
@@ -249,7 +249,7 @@ module tqvp_fjpolo_rv2a03 (
         .ADDR(),
         .DIN(apu_synced_data_input),
         .RW(apu_rw_signal),
-        .CS(),
+        .CS(apu_cs_signal_DA),
         .audio_channels(),
         .DmaData(),         // Stubbed input
         .odd_or_even(),
