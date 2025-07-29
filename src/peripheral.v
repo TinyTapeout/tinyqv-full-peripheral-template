@@ -151,7 +151,7 @@ module tqvp_fjpolo_rv2a03 (
             apu_synced_data_wr <= 1'b0;
         end else begin
             // Synchronize apu_wr_signal_RVdomain from 64MHz domain to PHI2 domain
-            {apu_synced_data_wr, apu_q1_synced_data_wr} = {apu_q1_synced_data_wr, apu_wr_signal_RVdomain};
+            {apu_synced_data_wr, apu_q1_synced_data_wr} <= {apu_q1_synced_data_wr, apu_wr_signal_RVdomain};
         end
     end
     assign apu_wr_signal = apu_synced_data_wr;
@@ -166,7 +166,7 @@ module tqvp_fjpolo_rv2a03 (
             apu_synced_data_rw <= 1'b0;
         end else begin
             // Synchronize apu_rw_signal_RVdomain from 64MHz domain to PHI2 domain
-            {apu_synced_data_rw, apu_q1_synced_data_rw} = {apu_q1_synced_data_rw, apu_rw_signal_RVdomain};
+            {apu_synced_data_rw, apu_q1_synced_data_rw} <= {apu_q1_synced_data_rw, apu_rw_signal_RVdomain};
         end
     end
     assign apu_rw_signal = (apu_wr_signal) ? 1'b0 : 1'b1;  // Default to read
@@ -180,7 +180,7 @@ module tqvp_fjpolo_rv2a03 (
             apu_synced_data_in <= 8'h0;
         end else begin
             // Synchronize data_in[7:0] from 64MHz domain to PHI2 domain
-            {apu_synced_data_in, apu_q1_synced_data_in} = {apu_q1_synced_data_in, data_in[7:0]};
+            {apu_synced_data_in, apu_q1_synced_data_in} <= {apu_q1_synced_data_in, data_in[7:0]};
         end
     end
 
@@ -193,7 +193,7 @@ module tqvp_fjpolo_rv2a03 (
             apu_synced_address <= 6'h0;
         end else begin
             // Synchronize address from 64MHz domain to PHI2 domain
-            {apu_synced_address, apu_q1_synced_address} = {apu_q1_synced_address, address};
+            {apu_synced_address, apu_q1_synced_address} <= {apu_q1_synced_address, address};
         end
     end
 
@@ -250,7 +250,7 @@ module tqvp_fjpolo_rv2a03 (
         .cold_reset(!rst_n),
         .allow_us(),
         .PAL(),
-        .ADDR(apu_q1_synced_address),
+        .ADDR(),
         .DIN(apu_synced_data_in),
         .RW(apu_rw_signal),
         .CS(),

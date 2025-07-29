@@ -1074,9 +1074,6 @@ module APU (
     output logic        o_ce
 );
 
-    // Assign the new o_ce output to aclk1
-    assign o_ce = aclk1; // This will indicate when Sample is valid
-
     reg [7:0] len_counter_lut[0:31];
 
     initial begin
@@ -1163,6 +1160,9 @@ module APU (
     logic [4:0] enabled_buffer, enabled_buffer_1;
     assign Enabled = aclk1 ? enabled_buffer : enabled_buffer_1;
 
+    // Assign the new o_ce output to aclk1
+    assign o_ce = aclk1; // This will indicate when Sample is valid
+
     always_ff @(posedge clk) begin
         phi2_old <= PHI2;
 
@@ -1185,7 +1185,7 @@ module APU (
     assign ClkL = (frame_half & aclk1_delayed);
 
     // Generate bus output
-    assign DOUT = {DmcIrq, irq_flag, 1'b0, IsDmcActive, NoiNonZero, TriNonZero, TriNonZero_enhanced, Sq2NonZero, Sq1NonZero};
+    assign DOUT = {DmcIrq, irq_flag, 1'b0, IsDmcActive, NoiNonZero, TriNonZero, Sq2NonZero, Sq1NonZero};
 
     assign IRQ = frame_irq || DmcIrq;
 
@@ -1360,7 +1360,7 @@ module APUMixer (
     output logic [15:0] sample,
     // Enhanced APU
     input  logic        apu_enhanced_ce,
-    input  logic  [5:0] apu_triangle_enhanced,
+    input  logic  [4:0] apu_triangle_enhanced,
     input  logic        apu_mapper_saturates
 );
 

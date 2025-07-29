@@ -3,6 +3,7 @@
 
 # defaults
 SIM ?= icarus
+# SIM ?= verilator
 TOPLEVEL_LANG ?= verilog
 SRC_DIR = $(PWD)/../src
 PROJECT_SOURCES = peripheral.v
@@ -14,11 +15,13 @@ ifneq ($(GATES),yes)
 SIM_BUILD				= sim_build/rtl
 VERILOG_SOURCES += $(addprefix $(SRC_DIR)/,$(PROJECT_SOURCES))
 VERILOG_SOURCES += $(addprefix $(SRC_DIR)/,$(ADDITIONAL_SOURCES))
+VERILOG_SOURCES += $(SRC_DIR)/user_peripherals/RV2A03/apu.v
+VERILOG_SOURCES += $(SRC_DIR)/user_peripherals/RV2A03/fractional_divider.v
 
 else
 
 # Gate level simulation:
-SIM_BUILD				= sim_build/gl
+SIM_BUILD		 = sim_build/gl
 COMPILE_ARGS    += -DGL_TEST
 COMPILE_ARGS    += -DFUNCTIONAL
 COMPILE_ARGS    += -DUSE_POWER_PINS
@@ -26,14 +29,18 @@ COMPILE_ARGS    += -DSIM
 COMPILE_ARGS    += -DUNIT_DELAY=\#1
 VERILOG_SOURCES += $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/primitives.v
 VERILOG_SOURCES += $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v
+VERILOG_SOURCES += $(SRC_DIR)/user_peripherals/RV2A03/apu.v
+VERILOG_SOURCES += $(SRC_DIR)/user_peripherals/RV2A03/fractional_divider.v
 
 # this gets copied in by the GDS action workflow
 VERILOG_SOURCES += $(PWD)/gate_level_netlist.v
-
 endif
+# Add this line for Verilator's timing options
+# COMPILE_ARGS        += --timing # Or --no-timing if you truly don't want delays
 
 # Allow sharing configuration between design and testbench via `include`:
 COMPILE_ARGS 		+= -I$(SRC_DIR)
+
 
 # Include the testbench sources:
 VERILOG_SOURCES += $(PWD)/tb.v

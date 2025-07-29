@@ -82,6 +82,9 @@ module spi_reg #(
   logic sample_addr;
   logic sample_data;
 
+  // General counter
+  logic [5:0] buffer_counter;
+
   // Next state logic
   always_comb begin
     // default assignments
@@ -97,7 +100,7 @@ module spi_reg #(
         end
       end
       STATE_ADDR : begin
-        if (buffer_counter == REG_W) begin
+        if (buffer_counter == REG_W[5:0]) begin
           sample_addr = 1'b1;
           next_state = STATE_CMD;
         end else if (eof == 1'b1) begin
@@ -114,7 +117,7 @@ module spi_reg #(
         end
       end
       STATE_RX_DATA : begin
-        if (buffer_counter == REG_W) begin
+        if (buffer_counter == REG_W[5:0]) begin
           sample_data = 1'b1;
           next_state = STATE_IDLE;
         end else if (eof == 1'b1) begin
@@ -124,7 +127,7 @@ module spi_reg #(
       STATE_TX_DATA : begin
         if (buffer_counter == '0) begin
           tx_buffer_load = 1'b1;
-        end else if (buffer_counter == REG_W) begin
+        end else if (buffer_counter == REG_W[5:0]) begin
           next_state = STATE_IDLE;
         end else if (eof == 1'b1) begin
           next_state = STATE_IDLE;
@@ -152,16 +155,13 @@ module spi_reg #(
     end
   end
 
-  // General counter
-  logic [5:0] buffer_counter;
-
   // Buffer Counter
   always_ff @(negedge(rstb) or posedge(clk)) begin
     if (!rstb) begin
       buffer_counter <= '0;
     end else begin
       if (ena == 1'b1) begin
-        if (buffer_counter == REG_W) begin
+        if (buffer_counter == REG_W[5:0]) begin
           buffer_counter <= '0;
         end else if (spi_data_sample == 1'b1) begin
           buffer_counter <= buffer_counter + 1'b1;
