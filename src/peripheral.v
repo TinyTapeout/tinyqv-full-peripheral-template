@@ -29,7 +29,7 @@
  //       | b7 | b6 | b5 | b4 | b3 | b2 | b1 | b0 |
  //       |    |    |    |    |    |    | IRQ | Data Output Ready |
  //
- //    0x20 - Data Input - Write (Data to be written to APU's DIN port for commands/writes)
+ //    0x20 - Data Input - Write/Read (Data to be written to APU's DIN port for commands/writes)
  //
  //    0x21 - Data Output MSB - Read (MSB of APU Sample)
  //
@@ -239,6 +239,17 @@ module tqvp_fjpolo_rv2a03 (
     // assign apu_status0_wire = apu_synced_status0;
 
     // reg_data_input
+    logic [7:0] apu_q1_synced_data_input;
+    logic [7:0] apu_synced_data_input;
+    always @(posedge apu_phi2_clk or negedge rst_n) begin
+        if (!rst_n) begin
+            apu_q1_synced_data_input <= 8'h0;
+            apu_synced_data_input <= 8'h0;
+        end else begin
+            // Synchronize reg_data_input from 64MHz domain to PHI2 domain
+            {apu_synced_data_input, apu_q1_synced_data_input} <= {apu_q1_synced_data_input, reg_data_input};
+        end
+    end
 
     /* --- NES APU Instance --- */
     APU apu(
