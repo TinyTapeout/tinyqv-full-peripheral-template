@@ -10,8 +10,10 @@
  //   - ui_in[0] to ui_in[7]: Input PMOD, always available. Note that ui_in[7] is normally used for UART RX.
  //     The inputs are synchronized to the clock, note this will introduce 2 cycles of delay on the inputs.
  //   - uo_out[0] to uo_out[7]: Output PMOD, only connected if this peripheral is selected.
- //     Note that uo_out[0] is normally used for UART TX.
- //     uo_out[1] is proposed for Audio PWM output.
+ //      ⚠ Note that uo_out[0] is normally used for UART TX.
+ //         +uo_out[1]: Audio PWM output Left Channel.
+ //         +uo_out[2]: Audio PWM output Right Channel.
+ //         +uo_out[3]: apu_phi2_clk - 21.477MHz.
 
  // Memory Mapped Registers
  //
@@ -357,7 +359,7 @@ module tqvp_fjpolo_rv2a03 (
     end
 
     // The bottom 8 bits of the stored data are added to ui_in and output to uo_out.
-    assign uo_out = example_data[7:0] + ui_in;                    
+    assign uo_out = {ui_in[7:4], apu_phi2_clk, ui_in[1:0]];                    
 
     // configuration0 register
     always @(posedge clk) begin
