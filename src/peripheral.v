@@ -244,7 +244,7 @@ module tqvp_fjpolo_rv2a03 (
         .ce(apu_ce),
         .reset(!rst_n),
         .cold_reset(!rst_n),
-        .allow_us(),
+        .allow_us(apu_us),
         .PAL(apu_pal),
         .ADDR(),
         .DIN(apu_synced_data_input),
