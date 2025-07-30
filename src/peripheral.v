@@ -194,12 +194,11 @@ module tqvp_fjpolo_rv2a03 (
                 freeze_clocks <= 1'b0;
             if (|faux_pixel_cnt)
                 faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
-
-            // if (skip_pixel && (faux_pixel_cnt == 0)) begin
+            if (skip_pixel && (faux_pixel_cnt == 0)) begin
             //     freeze_clocks <= 1'b1;
             //     faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
-            // end else if (cpu_ce) 
-            //     odd_or_even <= ~odd_or_even;
+            end else if (cpu_ce) 
+                odd_or_even <= ~odd_or_even;
 
             // Realign if the system type changes.
             last_apu_pal <= apu_pal;
