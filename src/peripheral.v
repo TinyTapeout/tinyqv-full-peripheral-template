@@ -284,7 +284,7 @@ module tqvp_fjpolo_rv2a03 (
                                     1'b0;                                // 2'b11 - No write
 
     // APU.RW: 1 for Read
-    wire apu_rw_signal_RVdomain =   (data_read_n == 2'b10) ? 1'b1 :    // 32-bit read
+    wire apu_rw =   (data_read_n == 2'b10) ? 1'b1 :    // 32-bit read
                                     (data_read_n == 2'b01) ? 1'b1 :    // 16-bit read
                                     (data_read_n == 2'b00) ? 1'b1 :    // 8-bit read
                                     1'b0;                              // 2'b11 - No read
@@ -305,7 +305,7 @@ module tqvp_fjpolo_rv2a03 (
         .PAL(apu_pal),
         .ADDR(),
         .DIN(data_in),
-        .RW(),
+        .RW(apu_rw),
         .CS(apu_cs_signal_DA),
         .audio_channels(apu_audio_channels),
         .DmaData(),         // Stubbed input
