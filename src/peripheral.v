@@ -29,7 +29,7 @@
  //       | PMOD PWM Out enable |  |  |  |  |  | isMMC5 | APU Mapper saturates |
  //
  //    0x12 - Status0 - Read
- //       | b7 |          b6        |        b5          |       b4           |          b3        |         b2         |         b1         | b0  |
+ //       | b7 |          b6        |        b5          |       b4           |          b3        |         b2         | b1  |         b0        |
  //       |    |  Audio Channel[4]  |  Audio Channel[3]  |  Audio Channel[2]  |  Audio Channel[1]  |  Audio Channel[0]  | IRQ | Data Output Ready |
  //
  //    0x20 - Data Input - Write/Read (Data to be written to APU's DIN port for commands/writes)
@@ -105,6 +105,9 @@ module tqvp_fjpolo_rv2a03 (
     wire [7:0] apu_data_out;
     wire [15:0] apu_internal_sample_wire;
     wire apu_data_output_ready;         // APU's output enable (APU.o_ce)
+    
+    /* --- apu_IRQ --- */
+    wire apu_IRQ;
     
     /* --- Clock magic --- */
 
@@ -227,7 +230,6 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
 
-    
     // De-Jitter shenanigans
     // apu_odd_or_even
     always @(posedge clk or negedge rst_n) begin
@@ -316,7 +318,7 @@ module tqvp_fjpolo_rv2a03 (
         .Sample(),
         .DmaReq(),          // Output, but ignored for now
         .DmaAddr(),         // Output, but ignored for now
-        .IRQ(uo_out[4]),             // Captured in status register
+        .IRQ(apu_IRQ),      // Captured in status register
         .apu_enhanced_ce(apu_enhanced),
         .apu_mapper_saturates(apu_mapper_saturates),
         .o_ce()             // APU's output enable (when Sample is valid)
