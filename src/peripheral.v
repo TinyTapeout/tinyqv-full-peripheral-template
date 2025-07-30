@@ -192,9 +192,8 @@ module tqvp_fjpolo_rv2a03 (
             // De-Jitter shenanigans
             if (faux_pixel_cnt == 3)
                 freeze_clocks <= 1'b0;
-
-            // if (|faux_pixel_cnt)
-            //     faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
+            if (|faux_pixel_cnt)
+                faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
 
             // if (skip_pixel && (faux_pixel_cnt == 0)) begin
             //     freeze_clocks <= 1'b1;
