@@ -83,8 +83,17 @@ async def test_project(dut):
         await tqv.write_byte_reg(0x22, value)
         assert await tqv.read_byte_reg(0x22) == value
 
+
+
+
+
+
+
+
+
+
     #
-    # Test 1 - Basic APU Configuration
+    # Test 1 - Basic APU Configuration and 440Hz Tone Generation
     #
 
     # Configure APU
@@ -166,7 +175,7 @@ async def test_project(dut):
     # Register $400A: Timer Low Byte
     # Write the lower 8 bits of the calculated timer period (62)
     # WRITE TRI_TIMER_PERIOD_LOW TO APU_TRI_REG2
-    await tqv.write_byte_reg(APU_TRI_REG2_ADDRESS, SQ_TIMER_PERIOD_LOW)
+    await tqv.write_byte_reg(APU_TRI_REG2_ADDRESS, TRI_TIMER_PERIOD_LOW)
 
     # Register $400B: Length Counter Load, Timer High Byte
     # Combine the length counter load value with the upper 3 bits of the timer period.
