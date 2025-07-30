@@ -388,7 +388,7 @@ module tqvp_fjpolo_rv2a03 (
         if (!rst_n) begin
             reg_data_input <= 0;
         end else begin
-            if (address == STATUS1_REG_ADDR) begin
+            if (address == DATA_INPUT_REG_ADDR) begin
                 if (data_write_n != 2'b11)
                     reg_data_input <= data_in[7:0];
             end
