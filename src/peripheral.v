@@ -90,7 +90,7 @@ module tqvp_fjpolo_rv2a03 (
     wire apu_pal                    = reg_configuration0[1];
     wire apu_us                     = reg_configuration0[2];
     wire apu_cs                     = reg_configuration0[3];
-    wire apu_even                   = reg_configuration0[4];  // TODO: Use after phi2 module is done
+    wire apu_even                   = reg_configuration0[4];
     wire apu_enhanced               = reg_configuration0[7];
 
     // Signals extracted from Configuration1 (for APU module)
@@ -121,7 +121,7 @@ module tqvp_fjpolo_rv2a03 (
 
     // XXX: Because we are using div4 clock divider for PAL, master clock should be 21.2813696
     // Clock Dividers
-    wire [4:0] div_cpu_n = 5'd12;;
+    wire [4:0] div_cpu_n = 5'd12;
     wire [2:0] div_ppu_n = 3'd4;
 
     // Counters
@@ -137,7 +137,7 @@ module tqvp_fjpolo_rv2a03 (
     wire ppu_ce  = (div_ppu == div_ppu_n);
     wire apu_phi2_clk = (div_cpu > 4 && div_cpu < div_cpu_n);
 
-    // The infamous NES jitter is important for accuracy, but wreks havok on modern devices and scalers,
+    //  The infamous NES jitter is important for accuracy, but wreks havok on modern devices and scalers,
     // so what I do here is pause the whole system for one PPU clock and insert a "fake" ppu clock to
     // replace the missing pixel. Thus the system runs accurately (ableit a few nanoseconds per frame slower)
     // but all video devices stay happy.
@@ -156,71 +156,105 @@ module tqvp_fjpolo_rv2a03 (
     initial last_apu_pal = 0;
     reg [2:0] cpu_tick_count;
     initial cpu_tick_count = 0;
-
     wire skip_ppu_cycle = (cpu_tick_count == 4) && (ppu_tick == 0);
 
-    always @(posedge apu_sound_clk) begin
-        if(~rst_n) begin
-            odd_or_even <= 1'b1;
+    // cpu_tick_count
+    always @(posedge apu_sound_clk or negedge rst_n) begin
+        if (~rst_n) begin
             cpu_tick_count <= 0;
-            last_apu_pal <= 0;
-            ppu_tick <= 0;
-            faux_pixel_cnt <= 0;
-            freeze_clocks <= 0;
-            div_ppu <= 0;
         end else begin
-            if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
-                if (~skip_ppu_cycle)
-                    div_cpu <= cpu_ce || (ppu_ce && div_cpu > div_cpu_n) ? 1'b1 : div_cpu + 1'b1;
-
-                div_ppu <= ppu_ce ? 1'b1 : div_ppu + 1'b1;
-
-                // reset the ticker on the first ppu tick at or after a cpu tick.
-                if (cpu_ce)
-                    ppu_tick <= 0;
-                else if (ppu_ce)
-                    ppu_tick <= ppu_tick + 1'b1;
-            end
-
-            // Add one extra PPU tick every 5 cpu cycles for PAL.
-            if ((cpu_ce)&&(apu_pal))
+            if ((cpu_ce) && (apu_pal)) begin
                 cpu_tick_count <= cpu_tick_count[2] ? 3'd0 : cpu_tick_count + 1'b1;
-            
-            // SDRAM Clock
-            div_sys <= div_sys + 1'b1;
-
-            // Realign if the system type changes.
-            last_apu_pal <= apu_pal;
+            end
             if (last_apu_pal != apu_pal) begin
-                div_cpu <= 5'd1;
-                div_ppu <= 3'd1;
-                div_sys <= 0;
                 cpu_tick_count <= 0;
             end
         end
     end
-
-    // De-Jitter shenanigans
-    always @(posedge apu_sound_clk) begin
-        if(~rst_n) begin
-            odd_or_even <= 1'b1;
-            faux_pixel_cnt <= 0;
-            freeze_clocks <= 0;
+    // last_apu_pal
+    always @(posedge apu_sound_clk or negedge rst_n) begin
+        if (~rst_n) begin
+            last_apu_pal <= 0;
+        end else begin
+            last_apu_pal <= apu_pal;
+        end
+    end
+    // ppu_tick
+    always @(posedge apu_sound_clk or negedge rst_n) begin
+        if (~rst_n) begin
+            ppu_tick <= 0;
         end else begin
             if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
-                // De-Jitter shenanigans
-                if (faux_pixel_cnt == 3)
-                    freeze_clocks <= 1'b0;
-                if (|faux_pixel_cnt)
-                    faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
-                if (skip_pixel && (faux_pixel_cnt == 0)) begin
-                    freeze_clocks <= 1'b1;
-                    faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
-                end else if (cpu_ce) 
-                    odd_or_even <= ~odd_or_even;
+                if (cpu_ce) begin
+                    ppu_tick <= 0;
+                end else if (ppu_ce) begin
+                    ppu_tick <= ppu_tick + 1'b1;
+                end
             end
         end
     end
+    // div_ppu
+    always @(posedge apu_sound_clk or negedge rst_n) begin
+        if (~rst_n) begin
+            div_ppu <= 0;
+        end else begin
+            if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
+                div_ppu <= ppu_ce ? 1'b1 : div_ppu + 1'b1;
+            end
+            if (last_apu_pal != apu_pal) begin
+                div_ppu <= 3'd1;
+            end
+        end
+    end
+    // div_cpu
+    always @(posedge apu_sound_clk or negedge rst_n) begin
+        if (~rst_n) begin
+            div_cpu <= 0;
+        end else begin
+            if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
+                if (~skip_ppu_cycle) begin
+                    div_cpu <= cpu_ce || (ppu_ce && div_cpu > div_cpu_n) ? 1'b1 : div_cpu + 1'b1;
+                end
+            end
+            if (last_apu_pal != apu_pal) begin
+                div_cpu <= 5'd1;
+            end
+        end
+    end
+    // div_sys
+    always @(posedge apu_sound_clk or negedge rst_n) begin
+        if (~rst_n) begin
+            div_sys <= 0;
+        end else begin
+            div_sys <= div_sys + 1'b1;
+            if (last_apu_pal != apu_pal) begin
+                div_sys <= 0;
+            end
+        end
+    end
+
+    // TODO: ⚠⚠⚠⚠⚠ Make yosys synthesise this
+    // // De-Jitter shenanigans
+    // always @(posedge apu_sound_clk) begin
+    //     if(~rst_n) begin
+    //         odd_or_even <= 1'b1;
+    //         faux_pixel_cnt <= 0;
+    //         freeze_clocks <= 0;
+    //     end else begin
+    //         if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
+    //             // De-Jitter shenanigans
+    //             if (faux_pixel_cnt == 3)
+    //                 freeze_clocks <= 1'b0;
+    //             if (|faux_pixel_cnt)
+    //                 faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
+    //             if (skip_pixel && (faux_pixel_cnt == 0)) begin
+    //                 freeze_clocks <= 1'b1;
+    //                 faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
+    //             end else if (cpu_ce) 
+    //                 odd_or_even <= ~odd_or_even;
+    //         end
+    //     end
+    // end
 
     // /* --- APU Register Access Mapping --- */
     // // Ensure apu_address_for_module is 16-bit by padding 0x40 to 6 bits
