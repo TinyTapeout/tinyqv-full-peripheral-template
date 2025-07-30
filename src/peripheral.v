@@ -188,18 +188,6 @@ module tqvp_fjpolo_rv2a03 (
             
             // SDRAM Clock
             div_sys <= div_sys + 1'b1;
-            
-            // De-Jitter shenanigans
-            if (faux_pixel_cnt == 3)
-                freeze_clocks <= 1'b0;
-            if (|faux_pixel_cnt)
-                faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
-            if (skip_pixel && (faux_pixel_cnt == 0)) begin
-                freeze_clocks <= 1'b1;
-                faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
-            end 
-            // else if (cpu_ce) 
-            //     odd_or_even <= ~odd_or_even;
 
             // Realign if the system type changes.
             last_apu_pal <= apu_pal;
@@ -208,6 +196,28 @@ module tqvp_fjpolo_rv2a03 (
                 div_ppu <= 3'd1;
                 div_sys <= 0;
                 cpu_tick_count <= 0;
+            end
+        end
+    end
+
+    // De-Jitter shenanigans
+    always @(posedge apu_sound_clk) begin
+        if(~rst_n) begin
+            odd_or_even <= 1'b1;
+            faux_pixel_cnt <= 0;
+            freeze_clocks <= 0;
+        end else begin
+            if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
+                // De-Jitter shenanigans
+                if (faux_pixel_cnt == 3)
+                    freeze_clocks <= 1'b0;
+                if (|faux_pixel_cnt)
+                    faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
+                if (skip_pixel && (faux_pixel_cnt == 0)) begin
+                    freeze_clocks <= 1'b1;
+                    faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
+                end else if (cpu_ce) 
+                    odd_or_even <= ~odd_or_even;
             end
         end
     end
