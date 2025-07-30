@@ -7,6 +7,9 @@ from cocotb.triggers import ClockCycles
 
 from tqv import TinyQV
 
+CONFIGURATION0_REG_ADDR = 0x11
+CONFIGURATION1_REG_ADDR = 0x12
+
 @cocotb.test()
 async def test_project(dut):
     dut._log.info("Start")
@@ -34,17 +37,25 @@ async def test_project(dut):
 
     # configuration0 - Test register write and read back
     for value in range(0x00, 0xFF):
-        await tqv.write_byte_reg(0x11, value)
-        assert await tqv.read_byte_reg(0x11) == value
+        await tqv.write_byte_reg(CONFIGURATION0_REG_ADDR, value)
+        assert await tqv.read_byte_reg(CONFIGURATION0_REG_ADDR) == value
 
     # configuration1 - Test register write and read back
     for value in range(0x00, 0xFF):
-        await tqv.write_byte_reg(0x12, value)
-        assert await tqv.read_byte_reg(0x12) == value
+        await tqv.write_byte_reg(CONFIGURATION1_REG_ADDR, value)
+        assert await tqv.read_byte_reg(CONFIGURATION1_REG_ADDR) == value
 
     # reg_data_input - Test register write and read back
     for value in range(0x00, 0xFF):
         await tqv.write_byte_reg(0x20, value)
         assert await tqv.read_byte_reg(0x20) == value
 
-    
+    #
+    # Test 1 - Basic APU Configuration
+    #
+
+    # Configure APU
+    configuration0_reg = 0x89
+    configuration1_reg = 0x00
+    await tqv.write_byte_reg(CONFIGURATION0_REG_ADDR, configuration0_reg)
+    await tqv.write_byte_reg(CONFIGURATION1_REG_ADDR, configuration0_reg)
