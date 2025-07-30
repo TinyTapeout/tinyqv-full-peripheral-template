@@ -257,10 +257,9 @@ module tqvp_fjpolo_rv2a03 (
             if ((~freeze_clocks)|(~(div_ppu == (div_ppu_n - 1'b1)))) begin
                 if (|faux_pixel_cnt) begin
                     faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
+                end else if ((skip_pixel)&&(faux_pixel_cnt == 0)) begin
+                    faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
                 end
-                // if ((skip_pixel)&&(faux_pixel_cnt == 0)) begin
-                //     faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
-                // end
             end
         end
     end
