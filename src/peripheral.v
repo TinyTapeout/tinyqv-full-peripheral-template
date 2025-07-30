@@ -117,7 +117,8 @@ module tqvp_fjpolo_rv2a03 (
 
     // odd or even apu cycle, AKA div_apu or apu_/clk2. This is actually not 50% duty cycle. It is high for 18
     // master cycles and low for 6 master cycles. It is considered active when low or "even".
-    reg odd_or_even = 1; // 1 == odd, 0 == even
+    reg odd_or_even; // 1 == odd, 0 == even
+    initial odd_or_even = 1'b1;
 
     // XXX: Because we are using div4 clock divider for PAL, master clock should be 21.2813696
     // Clock Dividers
