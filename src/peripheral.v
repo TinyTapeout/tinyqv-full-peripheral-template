@@ -296,6 +296,10 @@ module tqvp_fjpolo_rv2a03 (
     // // APU.CS: Asserted when APU chip select from config is high AND the peripheral address targets APU registers.
     wire apu_cs_signal_DA = apu_cs && ((address >= 6'h0)&&(address <= 6'hF));
 
+    /* --- APU address --- */
+    wire [4:0] apu_address;
+    assign apu_address = (address >= 6'h0 && address <= 6'hF) ? address[4:0] : 5'h00; // Use lower 5 bits of address for APU registers
+
     /* --- NES APU Instance --- */
     APU apu(
         .MMC5(apu_is_mmc5),
@@ -306,7 +310,7 @@ module tqvp_fjpolo_rv2a03 (
         .cold_reset(!rst_n),
         .allow_us(apu_us),
         .PAL(apu_pal),
-        .ADDR(),
+        .ADDR(apu_address),
         .DIN(data_in),
         .RW(apu_rw),
         .CS(apu_cs_signal_DA),
