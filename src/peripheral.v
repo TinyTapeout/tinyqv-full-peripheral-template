@@ -24,19 +24,19 @@
  //       | b7           | b6  | b5 | b4   | b3 | b2  | b1 | b0 |
  //       | Enhanced APU |     |    | Even | CS | PAL | US | CE |
  //
- //    0x11 - Configuration1 - Read/Write
+ //    0x20 - Configuration1 - Read/Write
  //       | b7                  | b6 | b5 | b4 | b3 | b2 | b1 | b0 |
  //       | PMOD PWM Out enable |  |  |  |  |  | isMMC5 | APU Mapper saturates |
  //
- //    0x12 - Status0 - Read
+ //    0x21 - Status0 - Read
  //       | b7 |          b6        |        b5          |       b4           |          b3        |         b2         | b1  |         b0        |
  //       |    |  Audio Channel[4]  |  Audio Channel[3]  |  Audio Channel[2]  |  Audio Channel[1]  |  Audio Channel[0]  | IRQ | Data Output Ready |
  //
- //    0x20 - Data Input - Write/Read (Data to be written to APU's DIN port for commands/writes)
+ //    0x22 - Data Input - Write/Read (Data to be written to APU's DIN port for commands/writes)
  //
- //    0x21 - Data Output MSB - Read (MSB of APU Sample)
+ //    0x23 - Data Output MSB - Read (MSB of APU Sample)
  //
- //    0x22 - Data Output LSB - Read (LSB of APU Sample)
+ //    0x24 - Data Output LSB - Read (LSB of APU Sample)
  //
  //    APU internal registers (0x4000-0x401F):
  //      Accessed via peripheral addresses 0x01-0x0F for direct read/write,
@@ -294,11 +294,11 @@ module tqvp_fjpolo_rv2a03 (
 
 
     // // APU.CS: Asserted when APU chip select from config is high AND the peripheral address targets APU registers.
-    wire apu_cs_signal_DA = apu_cs && ((address >= 6'h0)&&(address <= 6'hF));
+    wire apu_cs_signal_DA = apu_cs && (address <= 6'h20);
 
     /* --- APU address --- */
     wire [4:0] apu_address;
-    assign apu_address = (address >= 6'h0 && address <= 6'hF) ? address[4:0] : 5'h00; // Use lower 5 bits of address for APU registers
+    assign apu_address = (address <= 6'h20) ? address[4:0] : 5'h00; // Use lower 5 bits of address for APU registers
 
     /* --- NES APU Instance --- */
     APU apu(
@@ -384,12 +384,10 @@ module tqvp_fjpolo_rv2a03 (
     end
 
     // data_out
-    assign data_out =   (address == 6'h0) ? example_data :
-                        (address == 6'h11) ? {24'h0, reg_configuration0} :
-                        (address == 6'h12) ? {24'h0, reg_configuration1} :
-                        (address == 6'h13) ? {24'h0, reg_status0} :
-                        (address == 6'h20) ? {24'h0, reg_data_input} :
-                        (address == 6'h04) ? {24'h0, ui_in} :
+    assign data_out =   (address == 6'h20) ? {24'h0, reg_configuration0} :
+                        (address == 6'h21) ? {24'h0, reg_configuration1} :
+                        (address == 6'h22) ? {24'h0, reg_status0} :
+                        (address == 6'h23) ? {24'h0, reg_data_input} :
                         32'h0;
 
     // All reads complete in 1 clock
