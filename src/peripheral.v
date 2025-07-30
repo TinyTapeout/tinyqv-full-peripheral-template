@@ -109,8 +109,8 @@ module tqvp_fjpolo_rv2a03 (
 
     // odd or even apu cycle, AKA div_apu or apu_/clk2. This is actually not 50% duty cycle. It is high for 18
     // master cycles and low for 6 master cycles. It is considered active when low or "even".
-    reg odd_or_even; // 1 == odd, 0 == even
-    initial odd_or_even = 1'b1;
+    reg apu_odd_or_even; // 1 == odd, 0 == even
+    initial apu_odd_or_even = 1'b1;
 
     // XXX: Because we are using div4 clock divider for PAL, master clock should be 21.2813696
     // Clock Dividers
@@ -228,14 +228,14 @@ module tqvp_fjpolo_rv2a03 (
 
     
     // De-Jitter shenanigans
-    // odd_or_even
+    // apu_odd_or_even
     always @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
-            odd_or_even <= 1'b1;
+            apu_odd_or_even <= 1'b1;
         end else begin
             if ((~freeze_clocks)|(~(div_ppu == (div_ppu_n - 1'b1)))) begin
                 if (cpu_ce) begin
-                    odd_or_even <= ~odd_or_even;
+                    apu_odd_or_even <= ~apu_odd_or_even;
                 end
             end
         end
@@ -309,7 +309,7 @@ module tqvp_fjpolo_rv2a03 (
         .CS(apu_cs_signal_DA),
         .audio_channels(apu_audio_channels),
         .DmaData(),         // Stubbed input
-        .odd_or_even(),
+        .odd_or_even(apu_odd_or_even),
         .DmaAck(),          // Stubbed input
         .DOUT(),
         .Sample(),
