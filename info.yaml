@@ -5,7 +5,7 @@ project:
   discord:      "fjpolo"      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
   description:  "Nintendo NES' NTSC 2A03 APU"      # One line description of what your project does
   language:     "Verilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
-  clock_hz:     64000000  # Clock frequency in Hz (or 0 if not applicable)
+  clock_hz:     21477270  # Clock frequency in Hz (or 0 if not applicable)
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
   tiles: "1x2"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
@@ -20,7 +20,6 @@ project:
     - "peripheral.v"
     - "tt_wrapper.v"
     - "user_peripherals/RV2A03/apu.v"
-    - "user_peripherals/RV2A03/fractional_divider.v"
     - "spi/falling_edge_detector.sv"
     - "spi/rising_edge_detector.sv"
     - "spi/reclocking.sv"

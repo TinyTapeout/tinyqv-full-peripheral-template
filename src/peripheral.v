@@ -105,14 +105,6 @@ module tqvp_fjpolo_rv2a03 (
     wire [15:0] apu_internal_sample_wire;
     wire apu_data_output_ready;         // APU's output enable (APU.o_ce)
 
-    /* --- Clock Divider for APU Sound Clock --- */
-    logic apu_sound_clk;
-    fractional_divider apu_clk_divider (
-        .clk_in(clk),
-        .rst_n(rst_n),
-        .clk_out(apu_sound_clk) // 1.789773 MHz
-    );
-
     /* Clock magic */
 
     // odd or even apu cycle, AKA div_apu or apu_/clk2. This is actually not 50% duty cycle. It is high for 18
@@ -160,7 +152,7 @@ module tqvp_fjpolo_rv2a03 (
     wire skip_ppu_cycle = (cpu_tick_count == 4) && (ppu_tick == 0);
 
     // cpu_tick_count
-    always @(posedge apu_sound_clk or negedge rst_n) begin
+    always @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
             cpu_tick_count <= 0;
         end else begin
@@ -173,7 +165,7 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
     // last_apu_pal
-    always @(posedge apu_sound_clk or negedge rst_n) begin
+    always @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
             last_apu_pal <= 0;
         end else begin
@@ -181,7 +173,7 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
     // ppu_tick
-    always @(posedge apu_sound_clk or negedge rst_n) begin
+    always @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
             ppu_tick <= 0;
         end else begin
@@ -195,7 +187,7 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
     // div_ppu
-    always @(posedge apu_sound_clk or negedge rst_n) begin
+    always @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
             div_ppu <= 0;
         end else begin
@@ -208,7 +200,7 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
     // div_cpu
-    always @(posedge apu_sound_clk or negedge rst_n) begin
+    always @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
             div_cpu <= 0;
         end else begin
@@ -223,7 +215,7 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
     // div_sys
-    always @(posedge apu_sound_clk or negedge rst_n) begin
+    always @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
             div_sys <= 0;
         end else begin
@@ -237,7 +229,7 @@ module tqvp_fjpolo_rv2a03 (
     
     // De-Jitter shenanigans
     // odd_or_even
-    always @(posedge apu_sound_clk or negedge rst_n) begin
+    always @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
             odd_or_even <= 1'b1;
         end else begin
@@ -249,7 +241,7 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
     // faux_pixel_cnt
-    always @(posedge apu_sound_clk or negedge rst_n) begin
+    always @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
             faux_pixel_cnt <= 0;
         end else begin
@@ -265,7 +257,7 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
     // freeze_clocks
-    always @(posedge apu_sound_clk or negedge rst_n) begin
+    always @(posedge clk or negedge rst_n) begin
         if (~rst_n) begin
             freeze_clocks <= 0;
         end else begin
@@ -301,106 +293,10 @@ module tqvp_fjpolo_rv2a03 (
     // // APU.CS: Asserted when APU chip select from config is high AND the peripheral address targets APU registers.
     wire apu_cs_signal_DA = apu_cs && ((address >= 6'h0)&&(address <= 6'hF));
 
-    /* ⚠⚠⚠ CDC ⚠⚠⚠ */
-    // apu_wr_signal_RVdomain
-    wire apu_wr_signal;
-    logic apu_q1_synced_data_wr;
-    logic apu_synced_data_wr;
-    always @(posedge apu_phi2_clk or negedge rst_n) begin
-        if (!rst_n) begin
-            apu_q1_synced_data_wr <= 1'b0;
-            apu_synced_data_wr <= 1'b0;
-        end else begin
-            // Synchronize apu_wr_signal_RVdomain from 64MHz domain to PHI2 domain
-            {apu_synced_data_wr, apu_q1_synced_data_wr} <= {apu_q1_synced_data_wr, apu_wr_signal_RVdomain};
-        end
-    end
-    assign apu_wr_signal = apu_synced_data_wr;
-
-    // apu_rw_signal
-    wire apu_rw_signal;
-    logic apu_q1_synced_data_rw;
-    logic apu_synced_data_rw;
-    always @(posedge apu_phi2_clk or negedge rst_n) begin
-        if (!rst_n) begin
-            apu_q1_synced_data_rw <= 1'b0;
-            apu_synced_data_rw <= 1'b0;
-        end else begin
-            // Synchronize apu_rw_signal_RVdomain from 64MHz domain to PHI2 domain
-            {apu_synced_data_rw, apu_q1_synced_data_rw} <= {apu_q1_synced_data_rw, apu_rw_signal_RVdomain};
-        end
-    end
-    assign apu_rw_signal = (apu_wr_signal) ? 1'b0 : 1'b1;  // Default to read
-
-    // data_in
-    logic [7:0] apu_q1_synced_data_in;
-    logic [7:0] apu_synced_data_in;
-    always @(posedge apu_phi2_clk or negedge rst_n) begin
-        if (!rst_n) begin
-            apu_q1_synced_data_in <= 8'h0;
-            apu_synced_data_in <= 8'h0;
-        end else begin
-            // Synchronize data_in[7:0] from 64MHz domain to PHI2 domain
-            {apu_synced_data_in, apu_q1_synced_data_in} <= {apu_q1_synced_data_in, data_in[7:0]};
-        end
-    end
-
-    // address
-    logic [5:0] apu_q1_synced_address;
-    logic [5:0] apu_synced_address;
-    always @(posedge apu_phi2_clk or negedge rst_n) begin
-        if (!rst_n) begin
-            apu_q1_synced_address <= 6'h0;
-            apu_synced_address <= 6'h0;
-        end else begin
-            // Synchronize address from 64MHz domain to PHI2 domain
-            {apu_synced_address, apu_q1_synced_address} <= {apu_q1_synced_address, address};
-        end
-    end
-
-    // // reg_configuration0
-    // logic [7:0] apu_q1_synced_configuration0;
-    // logic [7:0] apu_synced_configuration0;
-    // always @(posedge apu_phi2_clk or negedge rst_n) begin
-    //     if (!rst_n) begin
-    //         apu_q1_synced_configuration0 <= 8'h0;
-    //         apu_synced_configuration0 <= 8'h0;
-    //     end else begin
-    //         // Synchronize reg_configuration0 from 64MHz domain to PHI2 domain
-    //         {apu_synced_configuration0, apu_q1_synced_configuration0} <= {apu_q1_synced_configuration0, reg_configuration0};
-    //     end
-    // end
-
-    // // reg_configuration1
-    // logic [7:0] apu_q1_synced_configuration1;
-    // logic [7:0] apu_synced_configuration1;
-    // always @(posedge apu_phi2_clk or negedge rst_n) begin
-    //     if (!rst_n) begin
-    //         apu_q1_synced_configuration1 <= 8'h0;
-    //         apu_synced_configuration1 <= 8'h0;
-    //     end else begin
-    //         // Synchronize reg_configuration1 from 64MHz domain to PHI2 domain
-    //         {apu_synced_configuration1, apu_q1_synced_configuration1} <= {apu_q1_synced_configuration1, reg_configuration1};
-    //     end
-    // end
-
-    // reg_data_input
-    logic [7:0] apu_q1_synced_data_input;
-    logic [7:0] apu_synced_data_input;
-    always @(posedge apu_phi2_clk or negedge rst_n) begin
-        if (!rst_n) begin
-            apu_q1_synced_data_input <= 8'h0;
-            apu_synced_data_input <= 8'h0;
-        end else begin
-            // Synchronize reg_data_input from 64MHz domain to PHI2 domain
-            {apu_synced_data_input, apu_q1_synced_data_input} <= {apu_q1_synced_data_input, reg_data_input};
-        end
-    end
-
     /* --- NES APU Instance --- */
     APU apu(
         .MMC5(apu_is_mmc5),
-        .clk(apu_sound_clk),
+        .clk(clk),
         .PHI2(apu_phi2_clk),
         .ce(apu_ce),
         .reset(!rst_n),

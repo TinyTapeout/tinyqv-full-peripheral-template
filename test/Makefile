@@ -16,7 +16,6 @@ SIM_BUILD				= sim_build/rtl
 VERILOG_SOURCES += $(addprefix $(SRC_DIR)/,$(PROJECT_SOURCES))
 VERILOG_SOURCES += $(addprefix $(SRC_DIR)/,$(ADDITIONAL_SOURCES))
 VERILOG_SOURCES += $(SRC_DIR)/user_peripherals/RV2A03/apu.v
-VERILOG_SOURCES += $(SRC_DIR)/user_peripherals/RV2A03/fractional_divider.v
 
 else
 
@@ -30,7 +29,6 @@ COMPILE_ARGS    += -DUNIT_DELAY=\#1
 VERILOG_SOURCES += $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/primitives.v
 VERILOG_SOURCES += $(PDK_ROOT)/sky130A/libs.ref/sky130_fd_sc_hd/verilog/sky130_fd_sc_hd.v
 VERILOG_SOURCES += $(SRC_DIR)/user_peripherals/RV2A03/apu.v
-VERILOG_SOURCES += $(SRC_DIR)/user_peripherals/RV2A03/fractional_divider.v
 
 # this gets copied in by the GDS action workflow
 VERILOG_SOURCES += $(PWD)/gate_level_netlist.v
