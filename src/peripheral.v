@@ -153,8 +153,8 @@ module tqvp_fjpolo_rv2a03 (
     reg [1:0] ppu_tick = 0;
     initial ppu_tick = 0;
 
-    reg last_apu_pal;
-    initial last_apu_pal = 0;
+    reg reg_last_apu_pal;
+    initial reg_last_apu_pal = 0;
     reg [2:0] cpu_tick_count;
     initial cpu_tick_count = 0;
     wire skip_ppu_cycle = (cpu_tick_count == 4) && (ppu_tick == 0);
@@ -167,17 +167,17 @@ module tqvp_fjpolo_rv2a03 (
             if ((cpu_ce) && (apu_pal)) begin
                 cpu_tick_count <= cpu_tick_count[2] ? 3'd0 : cpu_tick_count + 1'b1;
             end
-            if (last_apu_pal != apu_pal) begin
+            if (reg_last_apu_pal != apu_pal) begin
                 cpu_tick_count <= 0;
             end
         end
     end
-    // last_apu_pal
+    // reg_last_apu_pal
     always @(posedge apu_sound_clk or negedge rst_n) begin
         if (~rst_n) begin
-            last_apu_pal <= 0;
+            reg_last_apu_pal <= 0;
         end else begin
-            last_apu_pal <= apu_pal;
+            reg_last_apu_pal <= apu_pal;
         end
     end
     // ppu_tick
@@ -202,7 +202,7 @@ module tqvp_fjpolo_rv2a03 (
             if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
                 div_ppu <= ppu_ce ? 1'b1 : div_ppu + 1'b1;
             end
-            if (last_apu_pal != apu_pal) begin
+            if (reg_last_apu_pal != apu_pal) begin
                 div_ppu <= 3'd1;
             end
         end
@@ -217,7 +217,7 @@ module tqvp_fjpolo_rv2a03 (
                     div_cpu <= cpu_ce || (ppu_ce && div_cpu > div_cpu_n) ? 1'b1 : div_cpu + 1'b1;
                 end
             end
-            if (last_apu_pal != apu_pal) begin
+            if (reg_last_apu_pal != apu_pal) begin
                 div_cpu <= 5'd1;
             end
         end
@@ -228,12 +228,13 @@ module tqvp_fjpolo_rv2a03 (
             div_sys <= 0;
         end else begin
             div_sys <= div_sys + 1'b1;
-            if (last_apu_pal != apu_pal) begin
-                div_sys <= 0;
-            end
+            // if (reg_last_apu_pal != apu_pal) begin
+            //     div_sys <= 0;
+            // end
         end
     end
 
+    // De-Jitter shenanigans
     // TODO: ⚠⚠⚠⚠⚠ Make yosys synthesise this
     // odd_or_even
     always @(posedge apu_sound_clk or negedge rst_n) begin
