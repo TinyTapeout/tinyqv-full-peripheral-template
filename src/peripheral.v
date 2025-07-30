@@ -304,8 +304,8 @@ module tqvp_fjpolo_rv2a03 (
         .allow_us(apu_us),
         .PAL(apu_pal),
         .ADDR(),
-        .DIN(apu_synced_data_input),
-        .RW(apu_rw_signal),
+        .DIN(data_in),
+        .RW(),
         .CS(apu_cs_signal_DA),
         .audio_channels(apu_audio_channels),
         .DmaData(),         // Stubbed input
