@@ -273,9 +273,9 @@ module tqvp_fjpolo_rv2a03 (
                 if (faux_pixel_cnt == 3) begin
                     freeze_clocks <= 1'b0;
                 end
-                if (skip_pixel && (faux_pixel_cnt == 0)) begin
-                    freeze_clocks <= 1'b1;
-                end
+                // if (skip_pixel && (faux_pixel_cnt == 0)) begin
+                //     freeze_clocks <= 1'b1;
+                // end
             end
         end
     end
