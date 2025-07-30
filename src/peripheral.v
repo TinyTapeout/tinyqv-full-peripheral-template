@@ -189,9 +189,9 @@ module tqvp_fjpolo_rv2a03 (
             // SDRAM Clock
             div_sys <= div_sys + 1'b1;
             
-            // // De-Jitter shenanigans
-            // if (faux_pixel_cnt == 3)
-            //     freeze_clocks <= 1'b0;
+            // De-Jitter shenanigans
+            if (faux_pixel_cnt == 3)
+                freeze_clocks <= 1'b0;
 
             // if (|faux_pixel_cnt)
             //     faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
