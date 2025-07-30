@@ -234,27 +234,69 @@ module tqvp_fjpolo_rv2a03 (
     end
 
     // TODO: ⚠⚠⚠⚠⚠ Make yosys synthesise this
-    // // De-Jitter shenanigans
-    // always @(posedge apu_sound_clk) begin
-    //     if(~rst_n) begin
-    //         odd_or_even <= 1'b1;
+    // odd_or_even
+    always @(posedge apu_sound_clk or negedge rst_n) begin
+        if (~rst_n) begin
+            odd_or_even <= 1'b1;
+        end else begin
+            if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
+                if (cpu_ce) begin
+                    odd_or_even <= ~odd_or_even;
+                end
+            end
+        end
+    end
+    // // faux_pixel_cnt
+    // always @(posedge apu_sound_clk or negedge rst_n) begin
+    //     if (~rst_n) begin
     //         faux_pixel_cnt <= 0;
-    //         freeze_clocks <= 0;
     //     end else begin
     //         if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
-    //             // De-Jitter shenanigans
-    //             if (faux_pixel_cnt == 3)
-    //                 freeze_clocks <= 1'b0;
-    //             if (|faux_pixel_cnt)
+    //             if (|faux_pixel_cnt) begin
     //                 faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
+    //             end
     //             if (skip_pixel && (faux_pixel_cnt == 0)) begin
-    //                 freeze_clocks <= 1'b1;
     //                 faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
-    //             end else if (cpu_ce) 
-    //                 odd_or_even <= ~odd_or_even;
+    //             end
     //         end
     //     end
     // end
+    // // freeze_clocks
+    // always @(posedge apu_sound_clk or negedge rst_n) begin
+    //     if (~rst_n) begin
+    //         freeze_clocks <= 0;
+    //     end else begin
+    //         if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
+    //             if (faux_pixel_cnt == 3) begin
+    //                 freeze_clocks <= 1'b0;
+    //             end
+    //             if (skip_pixel && (faux_pixel_cnt == 0)) begin
+    //                 freeze_clocks <= 1'b1;
+    //             end
+    //         end
+    //     end
+    // end
+    // // // De-Jitter shenanigans
+    // // always @(posedge apu_sound_clk) begin
+    // //     if(~rst_n) begin
+    // //         odd_or_even <= 1'b1;
+    // //         faux_pixel_cnt <= 0;
+    // //         freeze_clocks <= 0;
+    // //     end else begin
+    // //         if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
+    // //             // De-Jitter shenanigans
+    // //             if (faux_pixel_cnt == 3)
+    // //                 freeze_clocks <= 1'b0;
+    // //             if (|faux_pixel_cnt)
+    // //                 faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
+    // //             if (skip_pixel && (faux_pixel_cnt == 0)) begin
+    // //                 freeze_clocks <= 1'b1;
+    // //                 faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
+    // //             end else if (cpu_ce) 
+    // //                 odd_or_even <= ~odd_or_even;
+    // //         end
+    // //     end
+    // // end
 
     // /* --- APU Register Access Mapping --- */
     // // Ensure apu_address_for_module is 16-bit by padding 0x40 to 6 bits
