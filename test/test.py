@@ -202,3 +202,38 @@ async def test_project(dut):
     await tqv.write_byte_reg(APU_FRAME_COUNTER_REG_ADDRESS, 0x00)
 
     # --- Time to test the output!!!
+
+    dut._log.info("APU configured. Starting output capture for plotting.")
+
+    # --- Capture APU Output for Plotting ---
+    output_samples = []
+    timestamps = []
+    
+    # Calculate the number of clock cycles needed to capture a few periods of 440Hz
+    # Period of 440Hz = 1/440 Hz = 0.0022727 seconds = 2.2727 ms
+    # Clock period = 100 ns = 0.1 us
+    # Cycles per period = 2.2727 ms / 0.1 us = 22727 cycles
+    # Let's capture for 5 periods to see the waveform clearly
+    num_cycles_to_capture = int(22727 * 5)
+
+    for i in range(num_cycles_to_capture):
+        await RisingEdge(dut.clk)
+        # Capture the current time and the 16-bit mixed sample output
+        # Ensure 'apu_output_sample_16b' is the correct signal name in your DUT
+        output_samples.append(dut.apu_output_sample_16b.value.signed_integer)
+        timestamps.append(i * 100e-9) # Time in seconds (i * clock_period)
+
+    dut._log.info(f"Captured {len(output_samples)} samples.")
+
+    # --- Plotting the captured data ---
+    plt.figure(figsize=(12, 6))
+    plt.plot(np.array(timestamps) * 1e3, output_samples) # Convert time to milliseconds for better readability
+    plt.title('APU Mixed Output Sample (440Hz)')
+    plt.xlabel('Time (ms)')
+    plt.ylabel('Sample Value (16-bit signed)')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig('apu_output_sample.png') # Save the plot to a file
+    dut._log.info("Plot saved as apu_output_sample.png")
+
+    dut._log.info("Test finished.")

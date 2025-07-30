@@ -20,27 +20,28 @@
  //
  //    0x00 - Example Register - Read/Write
  //    0x01 - 0x0F - APU Register Direct Access (Pass-through for NES APU registers 0x4001-0x400F) - Read/Write
- //    0x10 - Configuration0 - Read/Write
+ //
+ //    0x20 - Configuration0 - Read/Write
  //       | b7           | b6  | b5 | b4   | b3 | b2  | b1 | b0 |
  //       | Enhanced APU |     |    | Even | CS | PAL | US | CE |
  //
- //    0x20 - Configuration1 - Read/Write
+ //    0x21 - Configuration1 - Read/Write
  //       | b7                  | b6 | b5 | b4 | b3 | b2 | b1 | b0 |
  //       | PMOD PWM Out enable |  |  |  |  |  | isMMC5 | APU Mapper saturates |
  //
- //    0x21 - Status0 - Read
+ //    0x22 - Status0 - Read
  //       | b7 |          b6        |        b5          |       b4           |          b3        |         b2         | b1  |         b0        |
  //       |    |  Audio Channel[4]  |  Audio Channel[3]  |  Audio Channel[2]  |  Audio Channel[1]  |  Audio Channel[0]  | IRQ | Data Output Ready |
  //
- //    0x22 - Data Input - Write/Read (Data to be written to APU's DIN port for commands/writes)
+ //    0x23 - Data Input - Write/Read (Data to be written to APU's DIN port for commands/writes)
  //
- //    0x23 - Data Output MSB - Read (MSB of APU Sample)
+ //    0x24 - Data Output MSB - Read (MSB of APU Sample)
  //
- //    0x24 - Data Output LSB - Read (LSB of APU Sample)
+ //    0x25 - Data Output LSB - Read (LSB of APU Sample)
  //
  //    APU internal registers (0x4000-0x401F):
  //      Accessed via peripheral addresses 0x01-0x0F for direct read/write,
- //      or indirectly via 0x20 write for specific commands, and 0x21/0x22 read for audio sample.
+ //      or indirectly via 0x23 write for specific commands, and 0x24/0x25 read for audio sample.
 
 `default_nettype none
 
@@ -69,6 +70,14 @@ module tqvp_fjpolo_rv2a03 (
 
     output        user_interrupt  // Dedicated interrupt request for this peripheral
 );
+
+    localparam CONFIGURATION0_REG_ADDR = 6'h20; // Address for configuration0 register
+    localparam CONFIGURATION1_REG_ADDR = 6'h21; // Address for configuration1 register
+    localparam STATUS1_REG_ADDR = 6'h22; // Address for status0 register
+    localparam DATA_INPUT_REG_ADDR = 6'h23; // Address for data input register
+    localparam DATA_OUTPUT_MSB_REG_ADDR = 6'h24; // Address for data output MSB register
+    localparam DATA_OUTPUT_LSB_REG_ADDR = 6'h25; // Address for data output LSB register
+    
 
     /* --- Registers --- */
     reg [7:0] reg_configuration0;
@@ -300,6 +309,9 @@ module tqvp_fjpolo_rv2a03 (
     wire [4:0] apu_address;
     assign apu_address = (address <= 6'h20) ? address[4:0] : 5'h00; // Use lower 5 bits of address for APU registers
 
+    /* --- APU Sample Output --- */
+    wire [15:0] apu_output_sample_16b;
+
     /* --- NES APU Instance --- */
     APU apu(
         .MMC5(apu_is_mmc5),
@@ -319,7 +331,7 @@ module tqvp_fjpolo_rv2a03 (
         .odd_or_even(apu_odd_or_even),
         .DmaAck(),          // Stubbed input
         .DOUT(),
-        .Sample(),
+        .Sample(apu_output_sample_16b),
         .DmaReq(),          // Output, but ignored for now
         .DmaAddr(),         // Output, but ignored for now
         .IRQ(apu_IRQ),      // Captured in status register
@@ -352,7 +364,7 @@ module tqvp_fjpolo_rv2a03 (
         if (!rst_n) begin
             reg_configuration0 <= 0;
         end else begin
-            if (address == 6'h11) begin
+            if (address == CONFIGURATION0_REG_ADDR[5:0]) begin
                 if (data_write_n != 2'b11)
                     reg_configuration0 <= data_in[7:0];
             end
@@ -364,7 +376,7 @@ module tqvp_fjpolo_rv2a03 (
         if (!rst_n) begin
             reg_configuration1 <= 0;
         end else begin
-            if (address == 6'h12) begin
+            if (address == CONFIGURATION1_REG_ADDR[5:0]) begin
                 if (data_write_n != 2'b11)
                     reg_configuration1 <= data_in[7:0];
             end
@@ -376,7 +388,7 @@ module tqvp_fjpolo_rv2a03 (
         if (!rst_n) begin
             reg_data_input <= 0;
         end else begin
-            if (address == 6'h20) begin
+            if (address == STATUS1_REG_ADDR) begin
                 if (data_write_n != 2'b11)
                     reg_data_input <= data_in[7:0];
             end
@@ -384,10 +396,10 @@ module tqvp_fjpolo_rv2a03 (
     end
 
     // data_out
-    assign data_out =   (address == 6'h20) ? {24'h0, reg_configuration0} :
-                        (address == 6'h21) ? {24'h0, reg_configuration1} :
-                        (address == 6'h22) ? {24'h0, reg_status0} :
-                        (address == 6'h23) ? {24'h0, reg_data_input} :
+    assign data_out =   (address == CONFIGURATION0_REG_ADDR[5:0]) ? {24'h0, reg_configuration0} :
+                        (address == CONFIGURATION1_REG_ADDR[5:0]) ? {24'h0, reg_configuration1} :
+                        (address == STATUS1_REG_ADDR[5:0]) ? {24'h0, reg_status0} :
+                        (address == DATA_INPUT_REG_ADDR[5:0]) ? {24'h0, reg_data_input} :
                         32'h0;
 
     // All reads complete in 1 clock
