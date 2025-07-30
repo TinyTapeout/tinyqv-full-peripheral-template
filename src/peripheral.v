@@ -14,6 +14,7 @@
  //         +uo_out[1]: Audio PWM output Left Channel.
  //         +uo_out[2]: Audio PWM output Right Channel.
  //         +uo_out[3]: apu_phi2_clk - 21.477MHz.
+ //         +uo_out[4]: apu_IRQ
 
  // Memory Mapped Registers
  //
@@ -104,8 +105,8 @@ module tqvp_fjpolo_rv2a03 (
     wire [7:0] apu_data_out;
     wire [15:0] apu_internal_sample_wire;
     wire apu_data_output_ready;         // APU's output enable (APU.o_ce)
-
-    /* Clock magic */
+    
+    /* --- Clock magic --- */
 
     // odd or even apu cycle, AKA div_apu or apu_/clk2. This is actually not 50% duty cycle. It is high for 18
     // master cycles and low for 6 master cycles. It is considered active when low or "even".
@@ -315,7 +316,7 @@ module tqvp_fjpolo_rv2a03 (
         .Sample(),
         .DmaReq(),          // Output, but ignored for now
         .DmaAddr(),         // Output, but ignored for now
-        .IRQ(),             // Captured in status register
+        .IRQ(uo_out[4]),             // Captured in status register
         .apu_enhanced_ce(apu_enhanced),
         .apu_mapper_saturates(apu_mapper_saturates),
         .o_ce()             // APU's output enable (when Sample is valid)
