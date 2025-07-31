@@ -1131,12 +1131,12 @@ module APU (
     output wire  [4:0] o_enabled,
     output wire  [0:0] o_dout,
     output wire  [0:0] o_aclk1,
-    output wire  [0:0] o_apuTriMW0,
-    output wire  [0:0] o_apuTriMW1,
-    output wire  [0:0] o_apuTriMW2,
-    output wire  [0:0] o_apuTriMW3,
-    output wire  [0:0] o_apuTriMW4,
-    output wire  [0:0] o_apuTriMW5,
+    output wire  [0:0] o_ApuMW0,
+    output wire  [0:0] o_ApuMW1,
+    output wire  [0:0] o_ApuMW2,
+    output wire  [0:0] o_ApuMW3,
+    output wire  [0:0] o_ApuMW4,
+    output wire  [0:0] o_ApuMW5,
     output wire  [0:0] o_ClkL,
     output wire  [0:0] o_ClkE,
     // Triangle wave
@@ -1189,12 +1189,12 @@ assign Sample = sample_reg;
     assign  o_enabled_buffer1 = enabled_buffer_1;
     assign  o_enabled = Enabled;
     assign  o_aclk1 = aclk1;
-    assign  o_apuTriMW0 = ApuMW0;
-    assign  o_apuTriMW1 = ApuMW1;
-    assign  o_apuTriMW2 = ApuMW2;
-    assign  o_apuTriMW3 = ApuMW3;
-    assign  o_apuTriMW4 = ApuMW4;
-    assign  o_apuTriMW5 = ApuMW5;
+    assign  o_ApuMW0 = ApuMW0;
+    assign  o_ApuMW1 = ApuMW1;
+    assign  o_ApuMW2 = ApuMW2;
+    assign  o_ApuMW3 = ApuMW3;
+    assign  o_ApuMW4 = ApuMW4;
+    assign  o_ApuMW5 = ApuMW5;
     assign  o_ClkL = ClkL;
     assign  o_ClkE = ClkE;
 `endif
@@ -1255,7 +1255,8 @@ assign Sample = sample_reg;
     // aclk2    -- Aligned with CPU phi2, also every other frame
     // write    -- Happens on CPU phi2 (Not M2!). Most of these are latched by one of the above clocks.
     logic aclk1, aclk2, aclk1_delayed, phi1;
-    assign aclk1 = (ce)&(odd_or_even);              // Defined as the cpu tick when the frame counter increases
+    // assign aclk1 = (ce)&(odd_or_even);              // Defined as the cpu tick when the frame counter increases
+    assign aclk1 = (odd_or_even);              // Defined as the cpu tick when the frame counter increases
     assign aclk2 = phi2_ce & ~odd_or_even;          // Tick on odd cycles, not 50% duty cycle so it covers 2 cpu cycles
     assign aclk1_delayed = ce & ~odd_or_even;       // Ticks 1 cpu cycle after frame counter
     assign phi1 = ce;
@@ -1377,34 +1378,34 @@ assign Sample = sample_reg;
         .Sample       (TriSample),
         .IsNonZero    (TriNonZero)
 `ifdef COCOTB_TESTING
-    // Triangle wave
-   ,.o_apuTri_clk(o_apuTri_clk),
-    .o_apuTri_phi1(o_apuTri_phi1),
-    .o_apuTri_aclk1(o_apuTri_aclk1),
-    .o_apuTri_aclk1_d(o_apuTri_aclk1_d),
-    .o_apuTri_reset(o_apuTri_reset),
-    .o_apuTri_cold_reset(o_apuTri_cold_reset),
-    .o_apuTri_allow_us(o_apuTri_allow_us),
-    .o_apuTri_Addr(o_apuTri_Addr),
-    .o_apuTri_DIN(o_apuTri_DIN),
-    .o_apuTri_write(o_apuTri_write),
-    .o_apuTri_lc_load(o_apuTri_lc_load),
-    .o_apuTri_LenCtr_Clock(o_apuTri_LenCtr_Clock),
-    .o_apuTri_LinCtr_Clock(o_apuTri_LinCtr_Clock),
-    .o_apuTri_Enabled(o_apuTri_Enabled),
-    .o_apuTri_Period(o_apuTri_Period),
-    .o_apuTri_applied_period(o_apuTri_applied_period),
-    .o_apuTri_TimerCtr(o_apuTri_TimerCtr),
-    .o_apuTri_SeqPos(o_apuTri_SeqPos),
-    .o_apuTri_LinCtrPeriod(o_apuTri_LinCtrPeriod),
-    .o_apuTri_LinCtrPeriod_1(o_apuTri_LinCtrPeriod_1),
-    .o_apuTri_LinCtr(o_apuTri_LinCtr),
-    .o_apuTri_LinCtrl(o_apuTri_LinCtrl),
-    .o_apuTri_line_reload(o_apuTri_line_reload),
-    .o_apuTri_LinCtrZero(o_apuTri_LinCtrZero),
-    .o_apuTri_lc(o_apuTri_lc),
-    .o_apuTri_subunit_write(o_apuTri_subunit_write),
-    .o_apuTri_sample_latch(o_apuTri_sample_latch)
+        // Triangle wave
+    ,.o_apuTri_clk(o_apuTri_clk),
+        .o_apuTri_phi1(o_apuTri_phi1),
+        .o_apuTri_aclk1(o_apuTri_aclk1),
+        .o_apuTri_aclk1_d(o_apuTri_aclk1_d),
+        .o_apuTri_reset(o_apuTri_reset),
+        .o_apuTri_cold_reset(o_apuTri_cold_reset),
+        .o_apuTri_allow_us(o_apuTri_allow_us),
+        .o_apuTri_Addr(o_apuTri_Addr),
+        .o_apuTri_DIN(o_apuTri_DIN),
+        .o_apuTri_write(o_apuTri_write),
+        .o_apuTri_lc_load(o_apuTri_lc_load),
+        .o_apuTri_LenCtr_Clock(o_apuTri_LenCtr_Clock),
+        .o_apuTri_LinCtr_Clock(o_apuTri_LinCtr_Clock),
+        .o_apuTri_Enabled(o_apuTri_Enabled),
+        .o_apuTri_Period(o_apuTri_Period),
+        .o_apuTri_applied_period(o_apuTri_applied_period),
+        .o_apuTri_TimerCtr(o_apuTri_TimerCtr),
+        .o_apuTri_SeqPos(o_apuTri_SeqPos),
+        .o_apuTri_LinCtrPeriod(o_apuTri_LinCtrPeriod),
+        .o_apuTri_LinCtrPeriod_1(o_apuTri_LinCtrPeriod_1),
+        .o_apuTri_LinCtr(o_apuTri_LinCtr),
+        .o_apuTri_LinCtrl(o_apuTri_LinCtrl),
+        .o_apuTri_line_reload(o_apuTri_line_reload),
+        .o_apuTri_LinCtrZero(o_apuTri_LinCtrZero),
+        .o_apuTri_lc(o_apuTri_lc),
+        .o_apuTri_subunit_write(o_apuTri_subunit_write),
+        .o_apuTri_sample_latch(o_apuTri_sample_latch)
 `endif
     );
 

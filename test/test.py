@@ -241,7 +241,8 @@ async def test_project(dut):
 
     print("************************************************************************************************")
     for i in range(CYCLES_TO_CAPTURE):
-        await RisingEdge(dut.clk)
+        await RisingEdge(dut.o_aclk1)
+        # await RisingEdge(dut.clk)
         
         # # Triangle: New timer value
         # # write_reg(address=0x0A, data=0x8F); // Timer low byte
@@ -254,16 +255,15 @@ async def test_project(dut):
         
         # Capture the current time and the 16-bit mixed sample output
         # Read MSB and LSB registers and combine them into a 16-bit signed integer
-        status_value = await tqv.read_byte_reg(APU_STATUS_REG_ADDRESS)
-        print(f"Status flags: {status_value}")
         msb_value = await tqv.read_byte_reg(DATA_OUTPUT_MSB_REG_ADDR)
         lsb_value = await tqv.read_byte_reg(DATA_OUTPUT_LSB_REG_ADDR)
-        print(f"i: {i} | clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
+        if(dut.o_aclk1 == 1):
+            print(f"i: {i} | clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
         # print("Sample:", i, "MSB:", msb_value, "LSB:", lsb_value)
         if(dut.o_dout.value.integer & 0x40):
-            print("    Read Interrupt Status. Clear flags.")
+            # print("    Read Interrupt Status. Clear flags.")
             status_value = await tqv.read_byte_reg(APU_STATUS_REG_ADDRESS)
-            print(f"Status flags: {status_value}")
+            # print(f"Status flags: {status_value}")
 
         # Combine MSB and LSB into a 16-bit value
         combined_sample = (msb_value << 8) | lsb_value
