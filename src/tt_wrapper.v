@@ -40,7 +40,36 @@ module tt_um_tqv_peripheral_harness (
     output  wire [0:0]  o_ApuMW4,
     output  wire [0:0]  o_ApuMW5,
     output  wire [0:0]  o_ClkL,
-    output  wire [0:0]  o_ClkE
+    output  wire [0:0]  o_ClkE,
+    // Triangle wave
+    output wire        o_apuTri_clk,
+    output wire        o_apuTri_phi1,
+    output wire        o_apuTri_aclk1,
+    output wire        o_apuTri_aclk1_d,
+    output wire        o_apuTri_reset,
+    output wire        o_apuTri_cold_reset,
+    output wire        o_apuTri_allow_us,
+    output wire [1:0]  o_apuTri_Addr,
+    output wire [7:0]  o_apuTri_DIN,
+    output wire        o_apuTri_write,
+    output wire [7:0]  o_apuTri_lc_load,
+    output wire        o_apuTri_LenCtr_Clock,
+    output wire        o_apuTri_LinCtr_Clock,
+    output wire        o_apuTri_Enabled,
+    output wire [10:0] o_apuTri_Period,
+    output wire [10:0] o_apuTri_applied_period,
+    output wire [10:0] o_apuTri_TimerCtr,
+    output wire [4:0]  o_apuTri_SeqPos,
+    output wire [6:0]  o_apuTri_LinCtrPeriod,
+    output wire [6:0]  o_apuTri_LinCtrPeriod_1,
+    output wire [6:0]  o_apuTri_LinCtr,
+    output wire [0:0]  o_apuTri_LinCtrl,
+    output wire [0:0]  o_apuTri_line_reload,
+    output wire [0:0]  o_apuTri_LinCtrZero,
+    output wire [0:0]  o_apuTri_lc,
+    output wire [0:0]  o_apuTri_subunit_write,
+    output wire [3:0]  o_apuTri_sample_latch
+
 `endif
 );
 
@@ -100,7 +129,35 @@ module tt_um_tqv_peripheral_harness (
     .o_ApuMW4(o_ApuMW4),
     .o_ApuMW5(o_ApuMW5),
     .o_ClkL(o_ClkL),
-    .o_ClkE(o_ClkE)
+    .o_ClkE(o_ClkE),
+    // Triangle wave
+    .o_apuTri_clk(o_apuTri_clk),
+    .o_apuTri_phi1(o_apuTri_phi1),
+    .o_apuTri_aclk1(o_apuTri_aclk1),
+    .o_apuTri_aclk1_d(o_apuTri_aclk1_d),
+    .o_apuTri_reset(o_apuTri_reset),
+    .o_apuTri_cold_reset(o_apuTri_cold_reset),
+    .o_apuTri_allow_us(o_apuTri_allow_us),
+    .o_apuTri_Addr(o_apuTri_Addr),
+    .o_apuTri_DIN(o_apuTri_DIN),
+    .o_apuTri_write(o_apuTri_write),
+    .o_apuTri_lc_load(o_apuTri_lc_load),
+    .o_apuTri_LenCtr_Clock(o_apuTri_LenCtr_Clock),
+    .o_apuTri_LinCtr_Clock(o_apuTri_LinCtr_Clock),
+    .o_apuTri_Enabled(o_apuTri_Enabled),
+    .o_apuTri_Period(o_apuTri_Period),
+    .o_apuTri_applied_period(o_apuTri_applied_period),
+    .o_apuTri_TimerCtr(o_apuTri_TimerCtr),
+    .o_apuTri_SeqPos(o_apuTri_SeqPos),
+    .o_apuTri_LinCtrPeriod(o_apuTri_LinCtrPeriod),
+    .o_apuTri_LinCtrPeriod_1(o_apuTri_LinCtrPeriod_1),
+    .o_apuTri_LinCtr(o_apuTri_LinCtr),
+    .o_apuTri_LinCtrl(o_apuTri_LinCtrl),
+    .o_apuTri_line_reload(o_apuTri_line_reload),
+    .o_apuTri_LinCtrZero(o_apuTri_LinCtrZero),
+    .o_apuTri_lc(o_apuTri_lc),
+    .o_apuTri_subunit_write(o_apuTri_subunit_write),
+    .o_apuTri_sample_latch(o_apuTri_sample_latch)
 `endif
   );
 

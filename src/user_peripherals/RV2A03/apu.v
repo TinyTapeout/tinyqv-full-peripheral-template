@@ -281,7 +281,51 @@ module TriangleChan (
     input  logic       Enabled,
     output logic [3:0] Sample,
     output logic       IsNonZero
+`ifdef COCOTB_TESTING
+   ,output wire        o_apuTri_clk,
+    output wire        o_apuTri_phi1,
+    output wire        o_apuTri_aclk1,
+    output wire        o_apuTri_aclk1_d,
+    output wire        o_apuTri_reset,
+    output wire        o_apuTri_cold_reset,
+    output wire        o_apuTri_allow_us,
+    output wire [1:0]  o_apuTri_Addr,
+    output wire [7:0]  o_apuTri_DIN,
+    output wire        o_apuTri_write,
+    output wire [7:0]  o_apuTri_lc_load,
+    output wire        o_apuTri_LenCtr_Clock,
+    output wire        o_apuTri_LinCtr_Clock,
+    output wire        o_apuTri_Enabled,
+    output wire [10:0] o_apuTri_Period,
+    output wire [10:0] o_apuTri_applied_period,
+    output wire [10:0] o_apuTri_TimerCtr,
+    output wire [4:0]  o_apuTri_SeqPos,
+    output wire [6:0]  o_apuTri_LinCtrPeriod,
+    output wire [6:0]  o_apuTri_LinCtrPeriod_1,
+    output wire [6:0]  o_apuTri_LinCtr,
+    output wire [0:0]  o_apuTri_LinCtrl,
+    output wire [0:0]  o_apuTri_line_reload,
+    output wire [0:0]  o_apuTri_LinCtrZero,
+    output wire [0:0]  o_apuTri_lc,
+    output wire [0:0]  o_apuTri_subunit_write,
+    output wire [3:0]  o_apuTri_sample_latch
+`endif
 );
+`ifdef COCOTB_TESTING
+    assign o_apuTri_Period         = Period;
+    assign o_apuTri_applied_period = applied_period;
+    assign o_apuTri_TimerCtr       = TimerCtr;
+    assign o_apuTri_SeqPos         = SeqPos;
+    assign o_apuTri_LinCtrPeriod   = LinCtrPeriod;
+    assign o_apuTri_LinCtrPeriod_1 = LinCtrPeriod_1;
+    assign o_apuTri_LinCtr         = LinCtr;
+    assign o_apuTri_LinCtrl        = LinCtrl;
+    assign o_apuTri_line_reload    = line_reload;
+    assign o_apuTri_LinCtrZero     = LinCtrZero;
+    assign o_apuTri_lc             = lc;
+    assign o_apuTri_subunit_write  = subunit_write;
+    assign o_apuTri_sample_latch   = sample_latch;
+`endif
     logic [10:0] Period, applied_period, TimerCtr;
     logic [4:0] SeqPos;
     logic [6:0] LinCtrPeriod, LinCtrPeriod_1, LinCtr;
@@ -1087,14 +1131,42 @@ module APU (
     output wire  [4:0] o_enabled,
     output wire  [0:0] o_dout,
     output wire  [0:0] o_aclk1,
-    output wire  [0:0] o_ApuMW0,
-    output wire  [0:0] o_ApuMW1,
-    output wire  [0:0] o_ApuMW2,
-    output wire  [0:0] o_ApuMW3,
-    output wire  [0:0] o_ApuMW4,
-    output wire  [0:0] o_ApuMW5,
+    output wire  [0:0] o_apuTriMW0,
+    output wire  [0:0] o_apuTriMW1,
+    output wire  [0:0] o_apuTriMW2,
+    output wire  [0:0] o_apuTriMW3,
+    output wire  [0:0] o_apuTriMW4,
+    output wire  [0:0] o_apuTriMW5,
     output wire  [0:0] o_ClkL,
-    output wire  [0:0] o_ClkE
+    output wire  [0:0] o_ClkE,
+    // Triangle wave
+    output wire        o_apuTri_clk,
+    output wire        o_apuTri_phi1,
+    output wire        o_apuTri_aclk1,
+    output wire        o_apuTri_aclk1_d,
+    output wire        o_apuTri_reset,
+    output wire        o_apuTri_cold_reset,
+    output wire        o_apuTri_allow_us,
+    output wire [1:0]  o_apuTri_Addr,
+    output wire [7:0]  o_apuTri_DIN,
+    output wire        o_apuTri_write,
+    output wire [7:0]  o_apuTri_lc_load,
+    output wire        o_apuTri_LenCtr_Clock,
+    output wire        o_apuTri_LinCtr_Clock,
+    output wire        o_apuTri_Enabled,
+    output wire [10:0] o_apuTri_Period,
+    output wire [10:0] o_apuTri_applied_period,
+    output wire [10:0] o_apuTri_TimerCtr,
+    output wire [4:0]  o_apuTri_SeqPos,
+    output wire [6:0]  o_apuTri_LinCtrPeriod,
+    output wire [6:0]  o_apuTri_LinCtrPeriod_1,
+    output wire [6:0]  o_apuTri_LinCtr,
+    output wire [0:0]  o_apuTri_LinCtrl,
+    output wire [0:0]  o_apuTri_line_reload,
+    output wire [0:0]  o_apuTri_LinCtrZero,
+    output wire [0:0]  o_apuTri_lc,
+    output wire [0:0]  o_apuTri_subunit_write,
+    output wire [3:0]  o_apuTri_sample_latch
 `endif
 );
 
@@ -1117,12 +1189,12 @@ assign Sample = sample_reg;
     assign  o_enabled_buffer1 = enabled_buffer_1;
     assign  o_enabled = Enabled;
     assign  o_aclk1 = aclk1;
-    assign  o_ApuMW0 = ApuMW0;
-    assign  o_ApuMW1 = ApuMW1;
-    assign  o_ApuMW2 = ApuMW2;
-    assign  o_ApuMW3 = ApuMW3;
-    assign  o_ApuMW4 = ApuMW4;
-    assign  o_ApuMW5 = ApuMW5;
+    assign  o_apuTriMW0 = ApuMW0;
+    assign  o_apuTriMW1 = ApuMW1;
+    assign  o_apuTriMW2 = ApuMW2;
+    assign  o_apuTriMW3 = ApuMW3;
+    assign  o_apuTriMW4 = ApuMW4;
+    assign  o_apuTriMW5 = ApuMW5;
     assign  o_ClkL = ClkL;
     assign  o_ClkE = ClkE;
 `endif
@@ -1304,6 +1376,36 @@ assign Sample = sample_reg;
         .Enabled      (Enabled[2]),
         .Sample       (TriSample),
         .IsNonZero    (TriNonZero)
+`ifdef COCOTB_TESTING
+    // Triangle wave
+   ,.o_apuTri_clk(o_apuTri_clk),
+    .o_apuTri_phi1(o_apuTri_phi1),
+    .o_apuTri_aclk1(o_apuTri_aclk1),
+    .o_apuTri_aclk1_d(o_apuTri_aclk1_d),
+    .o_apuTri_reset(o_apuTri_reset),
+    .o_apuTri_cold_reset(o_apuTri_cold_reset),
+    .o_apuTri_allow_us(o_apuTri_allow_us),
+    .o_apuTri_Addr(o_apuTri_Addr),
+    .o_apuTri_DIN(o_apuTri_DIN),
+    .o_apuTri_write(o_apuTri_write),
+    .o_apuTri_lc_load(o_apuTri_lc_load),
+    .o_apuTri_LenCtr_Clock(o_apuTri_LenCtr_Clock),
+    .o_apuTri_LinCtr_Clock(o_apuTri_LinCtr_Clock),
+    .o_apuTri_Enabled(o_apuTri_Enabled),
+    .o_apuTri_Period(o_apuTri_Period),
+    .o_apuTri_applied_period(o_apuTri_applied_period),
+    .o_apuTri_TimerCtr(o_apuTri_TimerCtr),
+    .o_apuTri_SeqPos(o_apuTri_SeqPos),
+    .o_apuTri_LinCtrPeriod(o_apuTri_LinCtrPeriod),
+    .o_apuTri_LinCtrPeriod_1(o_apuTri_LinCtrPeriod_1),
+    .o_apuTri_LinCtr(o_apuTri_LinCtr),
+    .o_apuTri_LinCtrl(o_apuTri_LinCtrl),
+    .o_apuTri_line_reload(o_apuTri_line_reload),
+    .o_apuTri_LinCtrZero(o_apuTri_LinCtrZero),
+    .o_apuTri_lc(o_apuTri_lc),
+    .o_apuTri_subunit_write(o_apuTri_subunit_write),
+    .o_apuTri_sample_latch(o_apuTri_sample_latch)
+`endif
     );
 
     TriangleChan_enhanced_5b Tri_enhanced (
