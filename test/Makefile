@@ -33,11 +33,10 @@ VERILOG_SOURCES += $(SRC_DIR)/user_peripherals/RV2A03/apu.v
 # this gets copied in by the GDS action workflow
 VERILOG_SOURCES += $(PWD)/gate_level_netlist.v
 endif
-# Add this line for Verilator's timing options
-# COMPILE_ARGS        += --timing # Or --no-timing if you truly don't want delays
 
 # Allow sharing configuration between design and testbench via `include`:
 COMPILE_ARGS 		+= -I$(SRC_DIR)
+COMPILE_ARGS += -DCOCOTB_TESTING
 
 
 # Include the testbench sources:
@@ -52,4 +51,3 @@ include $(shell cocotb-config --makefiles)/Makefile.sim
 
 export COCOTB_RESOLVE_X = ZEROS
 
-COMPILE_ARGS += -DCOCOTB_TESTING

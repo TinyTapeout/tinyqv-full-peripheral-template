@@ -299,7 +299,8 @@ module TriangleChan (
     assign subunit_write = (Addr == 0 || Addr == 3) & write;
 
     assign Sample = (applied_period > 1 || allow_us) ? (SeqPos[3:0] ^ {4{~SeqPos[4]}}) : sample_latch;
-    
+    // assign Sample = Period;
+
     LenCounterUnit LenTri (
         .clk            (clk),
         .reset          (reset),
@@ -369,7 +370,8 @@ module TriangleChan (
             line_reload <= 0;
         end
 
-        if (applied_period > 1) sample_latch <= Sample;
+        if (applied_period > 1) 
+            sample_latch <= Sample;
     end
 
 endmodule
@@ -1073,7 +1075,8 @@ module APU (
     // Enhanced APU
     input  logic        apu_enhanced_ce,
     input  logic        apu_mapper_saturates,
-    output logic        o_ce
+    output logic        o_ce,
+    output logic o_frame_counter
 `ifdef COCOTB_TESTING
     // APU Debug
     ,output wire [4:0] o_Sq1Sample,
@@ -1231,8 +1234,8 @@ assign Sample = sample_reg;
     end
 
     logic frame_quarter, frame_half;
-    assign ClkE = (frame_quarter & aclk1_delayed);
-    assign ClkL = (frame_half & aclk1_delayed);
+    assign ClkE = ((frame_quarter)&(aclk1_delayed));
+    assign ClkL = ((frame_half)&(aclk1_delayed));
 
     // Generate bus output
     assign DOUT = {DmcIrq, irq_flag, 1'b0, IsDmcActive, NoiNonZero, TriNonZero, Sq2NonZero, Sq1NonZero};
@@ -1296,9 +1299,9 @@ assign Sample = sample_reg;
         .DIN          (DIN),
         .write        ((ApuMW2)&&(write)),
         .lc_load      (lc_load),
-        .LenCtr_Clock (clk),
-        .LinCtr_Clock (clk),
-        .Enabled      (1'b1),
+        .LenCtr_Clock (ClkE),
+        .LinCtr_Clock (ClkL),
+        .Enabled      (Enabled[2]),
         .Sample       (TriSample),
         .IsNonZero    (TriNonZero)
     );

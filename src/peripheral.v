@@ -97,12 +97,14 @@ module tqvp_fjpolo_rv2a03 (
 `endif
 );
 
+    wire [7:0] apu_dout;
 `ifdef COCOTB_TESTING
     assign o_apu_samples = apu_output_sample_16b;
     assign o_apu_ce = apu_ce;
     assign o_apu_cs = apu_cs;
     assign o_phi2 = apu_phi2_clk;
     assign o_even = apu_odd_or_even;
+    assign o_dout = apu_dout;
 `endif
 
     localparam CONFIGURATION0_REG_ADDR = 6'h20; // Address for configuration0 register
@@ -111,6 +113,9 @@ module tqvp_fjpolo_rv2a03 (
     localparam DATA_INPUT_REG_ADDR = 6'h23; // Address for data input register
     localparam DATA_OUTPUT_MSB_REG_ADDR = 6'h24; // Address for data output MSB register
     localparam DATA_OUTPUT_LSB_REG_ADDR = 6'h25; // Address for data output LSB register
+    localparam APU_STATUS_REG_ADDRESS  = 6'h15;
+    localparam APU_FRAME_COUNTER_REG_ADDRESS  = 6'h17;
+
     
     /* --- APU Registers --- */
     reg [7:0] reg_apu [30:0];
@@ -177,7 +182,7 @@ module tqvp_fjpolo_rv2a03 (
     wire ppu_ce  = (div_ppu == div_ppu_n);
     wire apu_phi2_clk = (div_cpu > 4 && div_cpu < div_cpu_n);
     wire apu_ce = cpu_ce;
-    wire apu_cs = (address >= 'h00)&&(address <= 'h18);
+    wire apu_cs = (address >= 'h00)&&(address < APU_FRAME_COUNTER_REG_ADDRESS);
 
     //  The infamous NES jitter is important for accuracy, but wreks havok on modern devices and scalers,
     // so what I do here is pause the whole system for one PPU clock and insert a "fake" ppu clock to
@@ -194,132 +199,61 @@ module tqvp_fjpolo_rv2a03 (
     reg [1:0] ppu_tick = 0;
     initial ppu_tick = 0;
 
-    reg last_apu_pal;
-    initial last_apu_pal = 0;
+    reg apu_last_pal;
+    initial apu_last_pal = 0;
     reg [2:0] cpu_tick_count;
     initial cpu_tick_count = 0;
     wire skip_ppu_cycle = (cpu_tick_count == 4) && (ppu_tick == 0);
 
-    // cpu_tick_count
-    always @(posedge clk or negedge rst_n) begin
-        if (~rst_n) begin
-            cpu_tick_count <= 0;
-        end else begin
-            if ((cpu_ce) && (apu_pal)) begin
-                cpu_tick_count <= cpu_tick_count[2] ? 3'd0 : cpu_tick_count + 1'b1;
-            end
-            if (last_apu_pal != apu_pal) begin
-                cpu_tick_count <= 0;
-            end
+    reg odd_or_even = 1; // 1 == odd, 0 == even
+
+    always @(posedge clk) begin
+        if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
+            if (~skip_ppu_cycle)
+                div_cpu <= cpu_ce || (ppu_ce && div_cpu > div_cpu_n) ? 1'b1 : div_cpu + 1'b1;
+
+            div_ppu <= ppu_ce ? 1'b1 : div_ppu + 1'b1;
+
+            // reset the ticker on the first ppu tick at or after a cpu tick.
+            if (cpu_ce)
+                ppu_tick <= 0;
+            else if (ppu_ce)
+                ppu_tick <= ppu_tick + 1'b1;
         end
-    end
-    // last_apu_pal
-    always @(posedge clk or negedge rst_n) begin
-        if (~rst_n) begin
-            last_apu_pal <= 0;
-        end else begin
-            last_apu_pal <= apu_pal;
+
+        // Add one extra PPU tick every 5 cpu cycles for PAL.
+        if ((cpu_ce)&&(apu_pal))
+            cpu_tick_count <= cpu_tick_count[2] ? 3'd0 : cpu_tick_count + 1'b1;
+        
+        // SDRAM Clock
+        div_sys <= div_sys + 1'b1;
+        
+        // De-Jitter shenanigans
+        if (faux_pixel_cnt == 3)
+            freeze_clocks <= 1'b0;
+
+        if (|faux_pixel_cnt)
+            faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
+
+        if (skip_pixel && (faux_pixel_cnt == 0)) begin
+            freeze_clocks <= 1'b1;
+            faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
         end
-    end
-    // ppu_tick
-    always @(posedge clk or negedge rst_n) begin
-        if (~rst_n) begin
-            ppu_tick <= 0;
-        end else begin
-            if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
-                if (cpu_ce) begin
-                    ppu_tick <= 0;
-                end else if (ppu_ce) begin
-                    ppu_tick <= ppu_tick + 1'b1;
-                end
-            end
-        end
-    end
-    // div_ppu
-    always @(posedge clk or negedge rst_n) begin
-        if (~rst_n) begin
-            div_ppu <= 0;
-        end else begin
-            if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
-                div_ppu <= ppu_ce ? 1'b1 : div_ppu + 1'b1;
-            end
-            if (last_apu_pal != apu_pal) begin
-                div_ppu <= 3'd1;
-            end
-        end
-    end
-    // div_cpu
-    always @(posedge clk or negedge rst_n) begin
-        if (~rst_n) begin
-            div_cpu <= 0;
-        end else begin
-            if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
-                if (~skip_ppu_cycle) begin
-                    div_cpu <= cpu_ce || (ppu_ce && div_cpu > div_cpu_n) ? 1'b1 : div_cpu + 1'b1;
-                end
-            end
-            if (last_apu_pal != apu_pal) begin
-                div_cpu <= 5'd1;
-            end
-        end
-    end
-    // div_sys
-    always @(posedge clk or negedge rst_n) begin
-        if (~rst_n) begin
+
+        if (~rst_n)
+            odd_or_even <= 1'b1;
+        else if (cpu_ce) 
+            odd_or_even <= ~odd_or_even;
+
+        // Realign if the system type changes.
+        apu_last_pal <= apu_pal;
+        if (apu_last_pal != apu_pal) begin
+            div_cpu <= 5'd1;
+            div_ppu <= 3'd1;
             div_sys <= 0;
-        end else begin
-            div_sys <= div_sys + 1'b1;
-            if (last_apu_pal != apu_pal) begin
-                div_sys <= 0;
-            end
+            cpu_tick_count <= 0;
         end
     end
-
-    // De-Jitter shenanigans
-    // apu_odd_or_even
-    always @(posedge clk or negedge rst_n) begin
-        if (~rst_n) begin
-            apu_odd_or_even <= 1'b1;
-        end else begin
-            if ((~freeze_clocks)|(~(div_ppu == (div_ppu_n - 1'b1)))) begin
-                if (apu_ce) begin
-                    apu_odd_or_even <= ~apu_odd_or_even;
-                end
-            end
-        end
-    end
-    // faux_pixel_cnt
-    always @(posedge clk or negedge rst_n) begin
-        if (~rst_n) begin
-            faux_pixel_cnt <= 0;
-        end else begin
-            if ((~freeze_clocks)|(~(div_ppu == (div_ppu_n - 1'b1)))) begin
-                if (|faux_pixel_cnt) begin
-                    faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
-                end
-                // TODO: Fix offender
-                if ((skip_pixel)&&(faux_pixel_cnt == 0)) begin
-                    faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
-                end
-            end
-        end
-    end
-    // freeze_clocks
-    always @(posedge clk or negedge rst_n) begin
-        if (~rst_n) begin
-            freeze_clocks <= 0;
-        end else begin
-            if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
-                if (faux_pixel_cnt == 3) begin
-                    freeze_clocks <= 1'b0;
-                end
-                if (skip_pixel && (faux_pixel_cnt == 0)) begin
-                    freeze_clocks <= 1'b1;
-                end
-            end
-        end
-    end
-
     // /* --- APU Register Access Mapping --- */
     // // Ensure apu_address_for_module is 16-bit by padding 0x40 to 6 bits
     // wire [15:0] apu_address_for_module;
@@ -339,12 +273,9 @@ module tqvp_fjpolo_rv2a03 (
 
     wire apu_rw = (apu_wr_signal_RVdomain) ? 1'b0 : 1'b1;
 
-    // APU.CS: Asserted when APU chip select from config is high AND the peripheral address targets APU registers.
-    wire apu_cs_signal_DA = apu_cs && (address <= 6'h18);
-
     /* --- APU address --- */
     wire [4:0] apu_address;
-    assign apu_address = (address <= 6'h20) ? address[4:0] : 5'h00; // Use lower 5 bits of address for APU registers
+    // assign apu_address = (address <= 6'h20) ? address[4:0] : 5'h00; // Use lower 5 bits of address for APU registers
 
     /* --- APU Sample Output --- */
     wire [15:0] apu_output_sample_16b;
@@ -369,7 +300,7 @@ module tqvp_fjpolo_rv2a03 (
         .ce(apu_ce),
         .reset(~rst_n),
         .cold_reset(1'b0),
-        .allow_us(1'b0),
+        .allow_us(1'b1),
         .PAL(1'b0),
         .ADDR(address[4:0]),
         .DIN(data_in[7:0]),
@@ -379,14 +310,14 @@ module tqvp_fjpolo_rv2a03 (
         .DmaData(),         // Stubbed input
         .odd_or_even(apu_odd_or_even),
         .DmaAck(),          // Stubbed input
-        .DOUT(o_dout),
+        .DOUT(apu_dout),
         .Sample(apu_output_sample_16b),
         .DmaReq(),          // Output, but ignored for now
         .DmaAddr(),         // Output, but ignored for now
         .IRQ(apu_IRQ),      // Captured in status register
         .apu_enhanced_ce(1'b0),
         .apu_mapper_saturates(1'b0),
-        .o_ce()             // APU's output enable (when Sample is valid)
+        .o_ce()            // APU's output enable (when Sample is valid)
 `ifdef COCOTB_TESTING
     // APU Debug
        ,.o_Sq1Sample(o_Sq1Sample),
@@ -394,7 +325,7 @@ module tqvp_fjpolo_rv2a03 (
         .o_TriSample(o_TriSample),
         .o_enabled_buffer(o_enabled_buffer),
         .o_enabled_buffer1(o_enabled_buffer1),
-        . o_enabled(o_enabled),
+        .o_enabled(o_enabled),
         .o_aclk1(o_aclk1),
         .o_ApuMW0(o_ApuMW0),
         .o_ApuMW1(o_ApuMW1),
@@ -481,7 +412,10 @@ module tqvp_fjpolo_rv2a03 (
     end
 
     // data_out
-    assign data_out =   (address < 6'h20) ? {24'h0, reg_apu[address]} :
+    assign data_out =   (address <  APU_STATUS_REG_ADDRESS[5:0]) ? {24'h0, reg_apu[address]} :
+                        (address == APU_FRAME_COUNTER_REG_ADDRESS[5:0]) ? {24'h0, reg_apu[address]} :
+                        (address == APU_STATUS_REG_ADDRESS[5:0]) ? {24'h0, apu_dout} :
+                        (address == APU_FRAME_COUNTER_REG_ADDRESS[5:0]) ? {24'h0, apu_dout} :
                         (address == CONFIGURATION0_REG_ADDR[5:0]) ? {24'h0, reg_configuration0} :
                         (address == CONFIGURATION1_REG_ADDR[5:0]) ? {24'h0, reg_configuration1} :
                         (address == STATUS1_REG_ADDR[5:0]) ? {24'h0, reg_status0} :
