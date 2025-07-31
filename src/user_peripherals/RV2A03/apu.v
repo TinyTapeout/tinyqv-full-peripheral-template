@@ -1,5 +1,6 @@
 // Rewritten 6/4/2020 by Kitrinx
 // This code is GPLv3.
+`define COCOTB_TESTING
 
 module LenCounterUnit (
     input  logic       clk,
@@ -291,13 +292,14 @@ module TriangleChan (
     logic LenCtrZero;
     logic subunit_write;
     logic [3:0] sample_latch;
+    // initial sample_latch = 'b1010;
 
     assign LinCtrZero = ~|LinCtr;
     assign IsNonZero = lc;
     assign subunit_write = (Addr == 0 || Addr == 3) & write;
 
     assign Sample = (applied_period > 1 || allow_us) ? (SeqPos[3:0] ^ {4{~SeqPos[4]}}) : sample_latch;
-
+    
     LenCounterUnit LenTri (
         .clk            (clk),
         .reset          (reset),
@@ -1064,7 +1066,7 @@ module APU (
     input  logic        odd_or_even,
     input  logic        DmaAck,         // 1 when DMC byte is on DmcData. DmcDmaRequested should go low.
     output logic  [7:0] DOUT,           // Data from APU
-    output logic [15:0] Sample,
+    output wire [15:0] Sample,
     output logic        DmaReq,         // 1 when DMC wants DMA
     output logic [15:0] DmaAddr,        // Address DMC wants to read
     output logic        IRQ,            // IRQ asserted high == asserted
@@ -1072,7 +1074,55 @@ module APU (
     input  logic        apu_enhanced_ce,
     input  logic        apu_mapper_saturates,
     output logic        o_ce
+`ifdef COCOTB_TESTING
+    // APU Debug
+    ,output wire [4:0] o_Sq1Sample,
+    output  wire [4:0] o_Sq2Sample,
+    output  wire [3:0] o_TriSample,
+    output wire  [4:0] o_enabled_buffer,
+    output wire  [4:0] o_enabled_buffer1,
+    output wire  [4:0] o_enabled,
+    output wire  [0:0] o_dout,
+    output wire  [0:0] o_aclk1,
+    output wire  [0:0] o_ApuMW0,
+    output wire  [0:0] o_ApuMW1,
+    output wire  [0:0] o_ApuMW2,
+    output wire  [0:0] o_ApuMW3,
+    output wire  [0:0] o_ApuMW4,
+    output wire  [0:0] o_ApuMW5,
+    output wire  [0:0] o_ClkL,
+    output wire  [0:0] o_ClkE
+`endif
 );
+
+reg [15:0] sample_reg;
+initial sample_reg = 'h0;
+always_ff @(posedge clk) begin
+        sample_reg <= Sample;
+    if(reset | cold_reset)
+        sample_reg <= 0;
+end
+wire [15:0] sample_wire;
+assign Sample = sample_reg;
+
+`ifdef COCOTB_TESTING
+    // APU Debug
+    assign  o_Sq1Sample = Sq1Sample;
+    assign  o_Sq2Sample = Sq2Sample;
+    assign  o_TriSample = TriSample;
+    assign  o_enabled_buffer = enabled_buffer;
+    assign  o_enabled_buffer1 = enabled_buffer_1;
+    assign  o_enabled = Enabled;
+    assign  o_aclk1 = aclk1;
+    assign  o_ApuMW0 = ApuMW0;
+    assign  o_ApuMW1 = ApuMW1;
+    assign  o_ApuMW2 = ApuMW2;
+    assign  o_ApuMW3 = ApuMW3;
+    assign  o_ApuMW4 = ApuMW4;
+    assign  o_ApuMW5 = ApuMW5;
+    assign  o_ClkL = ClkL;
+    assign  o_ClkE = ClkE;
+`endif
 
     reg [7:0] len_counter_lut[0:31];
 
@@ -1130,9 +1180,9 @@ module APU (
     // aclk2    -- Aligned with CPU phi2, also every other frame
     // write    -- Happens on CPU phi2 (Not M2!). Most of these are latched by one of the above clocks.
     logic aclk1, aclk2, aclk1_delayed, phi1;
-    assign aclk1 = ce & odd_or_even;          // Defined as the cpu tick when the frame counter increases
-    assign aclk2 = phi2_ce & ~odd_or_even;                   // Tick on odd cycles, not 50% duty cycle so it covers 2 cpu cycles
-    assign aclk1_delayed = ce & ~odd_or_even; // Ticks 1 cpu cycle after frame counter
+    assign aclk1 = (ce)&(odd_or_even);              // Defined as the cpu tick when the frame counter increases
+    assign aclk2 = phi2_ce & ~odd_or_even;          // Tick on odd cycles, not 50% duty cycle so it covers 2 cpu cycles
+    assign aclk1_delayed = ce & ~odd_or_even;       // Ticks 1 cpu cycle after frame counter
     assign phi1 = ce;
 
     logic [4:0] Enabled;
@@ -1244,11 +1294,11 @@ module APU (
         .allow_us     (allow_us),
         .Addr         (ADDR[1:0]),
         .DIN          (DIN),
-        .write        (ApuMW2 && write),
+        .write        ((ApuMW2)&&(write)),
         .lc_load      (lc_load),
-        .LenCtr_Clock (ClkL),
-        .LinCtr_Clock (ClkE),
-        .Enabled      (Enabled[2]),
+        .LenCtr_Clock (clk),
+        .LinCtr_Clock (clk),
+        .Enabled      (1'b1),
         .Sample       (TriSample),
         .IsNonZero    (TriNonZero)
     );
@@ -1317,7 +1367,7 @@ module APU (
         .noise        (NoiSample),
         .triangle     (TriSample),
         .dmc          (DmcSample),
-        .sample       (Sample),
+        .sample       (sample_wire),
         // Enhanced APU
         .apu_enhanced_ce(apu_enhanced_ce),
         .apu_triangle_enhanced(TriSample_enhanced),

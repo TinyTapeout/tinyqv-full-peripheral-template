@@ -33,6 +33,22 @@ module tb ();
     wire [0:0]  o_apu_cs;
     wire [0:0]  o_phi2;
     wire [0:0]  o_even;
+    wire [4:0] o_Sq1Sample;
+    wire [4:0] o_Sq2Sample;
+    wire [3:0] o_TriSample;
+    wire [4:0] o_enabled_buffer;
+    wire [4:0] o_enabled_buffer1;
+    wire [7:0] o_dout;
+    wire [7:0] o_aclk1;
+    wire [0:0]  o_ApuMW0;
+    wire [0:0]  o_ApuMW1;
+    wire [0:0]  o_ApuMW2;
+    wire [0:0]  o_ApuMW3;
+    wire [0:0]  o_ApuMW4;
+    wire [0:0]  o_ApuMW5;
+    wire [4:0]  o_enabled;
+    wire [0:0]  o_ClkL;
+    wire [0:0]  o_ClkE;
 `endif 
 
   tt_um_tqv_peripheral_harness test_harness (
@@ -56,7 +72,24 @@ module tb ();
       .o_apu_ce(o_apu_ce),  
       .o_apu_cs(o_apu_cs),
       .o_phi2(o_phi2),
-      .o_even(o_even)
+      .o_even(o_even),
+    // APU Debug
+    .o_Sq1Sample(o_Sq1Sample),
+    .o_Sq2Sample(o_Sq2Sample),
+    .o_TriSample(o_TriSample),
+    .o_enabled_buffer(o_enabled_buffer),
+    .o_enabled_buffer1(o_enabled_buffer1),
+    .o_enabled(o_enabled),
+    .o_dout(o_dout),
+    .o_aclk1(o_aclk1),
+    .o_ApuMW0(o_ApuMW0),
+    .o_ApuMW1(o_ApuMW1),
+    .o_ApuMW2(o_ApuMW2),
+    .o_ApuMW3(o_ApuMW3),
+    .o_ApuMW4(o_ApuMW4),
+    .o_ApuMW5(o_ApuMW5),
+    .o_ClkL(o_ClkL),
+    .o_ClkE(o_ClkE)
 `endif
   );
 

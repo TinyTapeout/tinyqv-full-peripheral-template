@@ -63,6 +63,7 @@ async def test_project(dut):
     # Set the clock period to 100 ns (10 MHz)
     clock = Clock(dut.clk, 100, units="ns")
     cocotb.start_soon(clock.start())
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # Interact with your design's registers through this TinyQV class.
     # This will allow the same test to be run when your design is integrated
@@ -73,8 +74,11 @@ async def test_project(dut):
 
     # Reset
     await tqv.reset()
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
+
     # Add a small delay after reset to allow the DUT to stabilize
-    await ClockCycles(dut.clk, 10) # Wait for 10 clock cycles
+    await ClockCycles(dut.clk, 10) # Wait for 100000 clock cycles
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     dut._log.info("Test project behavior")
 
@@ -82,28 +86,35 @@ async def test_project(dut):
     for value in range(0x00, 0x04): # Reverted range for thoroughness
         await tqv.write_byte_reg(CONFIGURATION0_REG_ADDR, value)
         assert await tqv.read_byte_reg(CONFIGURATION0_REG_ADDR) == value
+        print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
+
 
     # configuration1 - Test register write and read back
     for value in range(0x00, 0x04): # Reverted range for thoroughness
         await tqv.write_byte_reg(CONFIGURATION1_REG_ADDR, value)
         assert await tqv.read_byte_reg(CONFIGURATION1_REG_ADDR) == value
+        print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # reg_data_input - Test register write and read back
     for value in range(0x00, 0x04): # Reverted range for thoroughness
         await tqv.write_byte_reg(DATA_INPUT_REG_ADDR, value)
         assert await tqv.read_byte_reg(DATA_INPUT_REG_ADDR) == value
+        print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     #
     # Test 1 - Basic APU Configuration and 440Hz Tone Generation
     #
 
+    dut._log.info("Configure RP2A03")
     # Configure APU
     configuration0_reg = 0x89
     configuration1_reg = 0x00
     await tqv.write_byte_reg(CONFIGURATION0_REG_ADDR, configuration0_reg)
     assert await tqv.read_byte_reg(CONFIGURATION0_REG_ADDR) == configuration0_reg
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
     await tqv.write_byte_reg(CONFIGURATION1_REG_ADDR, configuration1_reg)
     assert await tqv.read_byte_reg(CONFIGURATION1_REG_ADDR) == configuration1_reg
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # 1. Disable all channels and reset frame counter (good practice before configuring)
     #    Writing 0 to 0x4015 disables all channels.
@@ -111,9 +122,11 @@ async def test_project(dut):
     # WRITE 0 TO APU_STATUS_REG
     await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x00)
     assert await tqv.read_byte_reg(APU_STATUS_REG_ADDRESS) == 0x00 # Re-enabled assertion
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
     # WRITE 0 TO APU_FRAME_COUNTER_REG
     await tqv.write_byte_reg(APU_FRAME_COUNTER_REG_ADDRESS, 0x00)
     assert await tqv.read_byte_reg(APU_FRAME_COUNTER_REG_ADDRESS) == 0x00 # Re-enabled assertion
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # --- Configure Square Channel 1 ---
     # Register $4000: Duty Cycle, Length Counter Halt, Constant Volume, Volume/Envelope Decay
@@ -126,18 +139,21 @@ async def test_project(dut):
     # WRITE $9F TO APU_SQ1_REG0
     await tqv.write_byte_reg(APU_SQ1_REG0_ADDRESS, 0x9F)
     assert await tqv.read_byte_reg(APU_SQ1_REG0_ADDRESS) == 0x9F
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # Register $4001: Sweep Unit (disabled for simple tone)
     # Set all bits to 0 to disable sweep.
     # WRITE $00 TO APU_SQ1_REG1
     await tqv.write_byte_reg(APU_SQ1_REG1_ADDRESS, 0x00)
     assert await tqv.read_byte_reg(APU_SQ1_REG1_ADDRESS) == 0x00
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # Register $4002: Timer Low Byte
     # Write the lower 8 bits of the calculated timer period (126)
     # WRITE SQ_TIMER_PERIOD_LOW TO APU_SQ1_REG2
     await tqv.write_byte_reg(APU_SQ1_REG2_ADDRESS, SQ_TIMER_PERIOD_LOW)
     assert await tqv.read_byte_reg(APU_SQ1_REG2_ADDRESS) == SQ_TIMER_PERIOD_LOW
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # Register $4003: Length Counter Load, Timer High Byte
     # Combine the length counter load value with the upper 3 bits of the timer period.
@@ -147,6 +163,7 @@ async def test_project(dut):
     # WRITE (LENGTH_COUNTER_LOAD_VALUE | SQ_TIMER_PERIOD_HIGH) TO APU_SQ1_REG3
     await tqv.write_byte_reg(APU_SQ1_REG3_ADDRESS, (LENGTH_COUNTER_LOAD_VALUE | SQ_TIMER_PERIOD_HIGH))
     assert await tqv.read_byte_reg(APU_SQ1_REG3_ADDRESS) == (LENGTH_COUNTER_LOAD_VALUE | SQ_TIMER_PERIOD_HIGH)
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # --- Configure Square Channel 2 (similar to Square 1) ---
     # Register $4004: Duty Cycle, Length Counter Halt, Constant Volume, Volume/Envelope Decay
@@ -154,21 +171,25 @@ async def test_project(dut):
     # WRITE $9F TO APU_SQ2_REG0
     await tqv.write_byte_reg(APU_SQ2_REG0_ADDRESS, 0x9F)
     assert await tqv.read_byte_reg(APU_SQ2_REG0_ADDRESS) == 0x9F
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # Register $4005: Sweep Unit (disabled)
     # WRITE $00 TO APU_SQ2_REG1
     await tqv.write_byte_reg(APU_SQ2_REG1_ADDRESS, 0x00)
     assert await tqv.read_byte_reg(APU_SQ2_REG1_ADDRESS) == 0x00
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # Register $4006: Timer Low Byte
     # WRITE SQ_TIMER_PERIOD_LOW TO APU_SQ2_REG2
     await tqv.write_byte_reg(APU_SQ2_REG2_ADDRESS, SQ_TIMER_PERIOD_LOW)
     assert await tqv.read_byte_reg(APU_SQ2_REG2_ADDRESS) == SQ_TIMER_PERIOD_LOW
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # Register $4007: Length Counter Load, Timer High Byte
     # WRITE (LENGTH_COUNTER_LOAD_VALUE | SQ_TIMER_PERIOD_HIGH) TO APU_SQ2_REG3
     await tqv.write_byte_reg(APU_SQ2_REG3_ADDRESS, (LENGTH_COUNTER_LOAD_VALUE | SQ_TIMER_PERIOD_HIGH))
     assert await tqv.read_byte_reg(APU_SQ2_REG3_ADDRESS) == (LENGTH_COUNTER_LOAD_VALUE | SQ_TIMER_PERIOD_HIGH)
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # --- Configure Triangle Channel ---
     # Register $4008: Linear Counter Load, Linear Counter Control (Length Counter Halt for Triangle)
@@ -181,17 +202,20 @@ async def test_project(dut):
     # WRITE $7F TO APU_TRI_REG0
     await tqv.write_byte_reg(APU_TRI_REG0_ADDRESS, 0x7F)
     assert await tqv.read_byte_reg(APU_TRI_REG0_ADDRESS) == 0x7F
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # Register $4009: Unused (write $00)
     # WRITE $00 TO APU_TRI_REG1
     await tqv.write_byte_reg(APU_TRI_REG1_ADDRESS, 0x00)
     assert await tqv.read_byte_reg(APU_TRI_REG1_ADDRESS) == 0x00
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # Register $400A: Timer Low Byte
     # Write the lower 8 bits of the calculated timer period (62)
     # WRITE TRI_TIMER_PERIOD_LOW TO APU_TRI_REG2
     await tqv.write_byte_reg(APU_TRI_REG2_ADDRESS, TRI_TIMER_PERIOD_LOW)
     assert await tqv.read_byte_reg(APU_TRI_REG2_ADDRESS) == TRI_TIMER_PERIOD_LOW
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # Register $400B: Length Counter Load, Timer High Byte
     # Combine the length counter load value with the upper 3 bits of the timer period.
@@ -200,6 +224,7 @@ async def test_project(dut):
     # WRITE (LENGTH_COUNTER_LOAD_VALUE | TRI_TIMER_PERIOD_HIGH) TO APU_TRI_REG3
     await tqv.write_byte_reg(APU_TRI_REG3_ADDRESS, (LENGTH_COUNTER_LOAD_VALUE | TRI_TIMER_PERIOD_HIGH))
     assert await tqv.read_byte_reg(APU_TRI_REG3_ADDRESS) == (LENGTH_COUNTER_LOAD_VALUE | TRI_TIMER_PERIOD_HIGH)
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # --- Enable Channels ---
     # Register $4015: APU Status / Channel Enable
@@ -208,6 +233,7 @@ async def test_project(dut):
     # WRITE $07 TO APU_STATUS_REG
     await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x07)
     assert await tqv.read_byte_reg(APU_STATUS_REG_ADDRESS) == 0x07
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     # --- Start Frame Counter (Optional, but good for consistent behavior) ---
     # Writing to $4017 starts the frame counter.
@@ -219,6 +245,7 @@ async def test_project(dut):
     # WRITE $00 TO APU_FRAME_COUNTER_REG
     await tqv.write_byte_reg(APU_FRAME_COUNTER_REG_ADDRESS, 0x00)
     assert await tqv.read_byte_reg(APU_FRAME_COUNTER_REG_ADDRESS) == 0x00 # Corrected: Check APU_FRAME_COUNTER_REG_ADDRESS
+    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
 
     dut._log.info("APU configured. Starting output capture for plotting.")
 
@@ -240,11 +267,12 @@ async def test_project(dut):
         # Read MSB and LSB registers and combine them into a 16-bit signed integer
         msb_value = await tqv.read_byte_reg(DATA_OUTPUT_MSB_REG_ADDR)
         lsb_value = await tqv.read_byte_reg(DATA_OUTPUT_LSB_REG_ADDR)
-        
-
-        print(f"i: {i} | clk: {dut.clk} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | sample: {dut.o_apu_samples}")
+        print(f"i: {i} | clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
         # print("Sample:", i, "MSB:", msb_value, "LSB:", lsb_value)
-        
+        if(dut.o_dout.value.integer & 0x40):
+            print("    Read Interrupt Status. Clear flags.")
+            status_value = await tqv.read_byte_reg(APU_STATUS_REG_ADDRESS)
+
         # Combine MSB and LSB into a 16-bit value
         combined_sample = (msb_value << 8) | lsb_value
         
@@ -257,7 +285,7 @@ async def test_project(dut):
 
         output_samples.append(signed_sample)
         timestamps.append(i * 100e-9) # Time in seconds (i * clock_period)
-        await Timer(1000, units='ns')
+        # await Timer(1000, units='ns')
 
     print("************************************************************************************************")
     dut._log.info(f"Captured {len(output_samples)} samples.")

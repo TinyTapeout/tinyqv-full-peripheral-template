@@ -72,11 +72,28 @@ module tqvp_fjpolo_rv2a03 (
     output        user_interrupt  // Dedicated interrupt request for this peripheral
 
 `ifdef COCOTB_TESTING
-    ,output [15:0] o_apu_samples,
-    output [0:0]   o_apu_ce,
-    output [0:0]   o_apu_cs,
-    output [0:0]   o_phi2,
-    output [0:0]   o_even
+    ,output wire [15:0] o_apu_samples,
+    output  wire [0:0]  o_apu_ce,
+    output  wire [0:0]  o_apu_cs,
+    output  wire [0:0]  o_phi2,
+    output  wire [0:0]  o_even,
+    // APU Debug
+    output  wire [4:0]  o_Sq1Sample,
+    output  wire [4:0]  o_Sq2Sample,
+    output  wire [3:0]  o_TriSample,
+    output  wire [4:0]  o_enabled_buffer,
+    output  wire [4:0]  o_enabled_buffer1,
+    output  wire  [4:0] o_enabled,
+    output  wire [7:0]  o_dout,
+    output  wire [0:0]  o_aclk1,
+    output  wire [0:0]  o_ApuMW0,
+    output  wire [0:0]  o_ApuMW1,
+    output  wire [0:0]  o_ApuMW2,
+    output  wire [0:0]  o_ApuMW3,
+    output  wire [0:0]  o_ApuMW4,
+    output  wire [0:0]  o_ApuMW5,
+    output  wire [0:0]  o_ClkL,
+    output  wire [0:0]  o_ClkE
 `endif
 );
 
@@ -85,6 +102,7 @@ module tqvp_fjpolo_rv2a03 (
     assign o_apu_ce = apu_ce;
     assign o_apu_cs = apu_cs;
     assign o_phi2 = apu_phi2_clk;
+    assign o_even = apu_odd_or_even;
 `endif
 
     localparam CONFIGURATION0_REG_ADDR = 6'h20; // Address for configuration0 register
@@ -159,7 +177,7 @@ module tqvp_fjpolo_rv2a03 (
     wire ppu_ce  = (div_ppu == div_ppu_n);
     wire apu_phi2_clk = (div_cpu > 4 && div_cpu < div_cpu_n);
     wire apu_ce = cpu_ce;
-    wire apu_cs = (address >= 'h00)&&(address <= 'h25);
+    wire apu_cs = (address >= 'h00)&&(address <= 'h18);
 
     //  The infamous NES jitter is important for accuracy, but wreks havok on modern devices and scalers,
     // so what I do here is pause the whole system for one PPU clock and insert a "fake" ppu clock to
@@ -264,7 +282,7 @@ module tqvp_fjpolo_rv2a03 (
             apu_odd_or_even <= 1'b1;
         end else begin
             if ((~freeze_clocks)|(~(div_ppu == (div_ppu_n - 1'b1)))) begin
-                if (cpu_ce) begin
+                if (apu_ce) begin
                     apu_odd_or_even <= ~apu_odd_or_even;
                 end
             end
@@ -345,23 +363,23 @@ module tqvp_fjpolo_rv2a03 (
 
     /* --- NES APU Instance --- */
     APU apu(
-        .MMC5(apu_is_mmc5),
+        .MMC5(1'b0),
         .clk(clk),
         .PHI2(apu_phi2_clk),
         .ce(apu_ce),
-        .reset(rst_n),
-        .cold_reset(rst_n),
+        .reset(~rst_n),
+        .cold_reset(1'b0),
         .allow_us(1'b0),
         .PAL(1'b0),
         .ADDR(address[4:0]),
-        .DIN(data_in),
+        .DIN(data_in[7:0]),
         .RW(apu_rw), // 0 - Write, 1 - Read
         .CS(apu_cs),
         .audio_channels(5'b11111),
         .DmaData(),         // Stubbed input
         .odd_or_even(apu_odd_or_even),
         .DmaAck(),          // Stubbed input
-        .DOUT(),
+        .DOUT(o_dout),
         .Sample(apu_output_sample_16b),
         .DmaReq(),          // Output, but ignored for now
         .DmaAddr(),         // Output, but ignored for now
@@ -369,6 +387,24 @@ module tqvp_fjpolo_rv2a03 (
         .apu_enhanced_ce(1'b0),
         .apu_mapper_saturates(1'b0),
         .o_ce()             // APU's output enable (when Sample is valid)
+`ifdef COCOTB_TESTING
+    // APU Debug
+       ,.o_Sq1Sample(o_Sq1Sample),
+        .o_Sq2Sample(o_Sq2Sample),
+        .o_TriSample(o_TriSample),
+        .o_enabled_buffer(o_enabled_buffer),
+        .o_enabled_buffer1(o_enabled_buffer1),
+        . o_enabled(o_enabled),
+        .o_aclk1(o_aclk1),
+        .o_ApuMW0(o_ApuMW0),
+        .o_ApuMW1(o_ApuMW1),
+        .o_ApuMW2(o_ApuMW2),
+        .o_ApuMW3(o_ApuMW3),
+        .o_ApuMW4(o_ApuMW4),
+        .o_ApuMW5(o_ApuMW5),
+        .o_ClkL(o_ClkL),
+        .o_ClkE(o_ClkE)
+`endif
     );
 
     /* --- APU Registers Write Logic --- */
