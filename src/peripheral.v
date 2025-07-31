@@ -22,8 +22,8 @@
  //    0x01 - 0x0F - APU Register Direct Access (Pass-through for NES APU registers 0x4001-0x400F) - Read/Write
  //
  //    0x20 - Configuration0 - Read/Write
- //       | b7           | b6  | b5 | b4   | b3 | b2  | b1 | b0 |
- //       | Enhanced APU |     |    | Even | CS | PAL | US | CE |
+ //       | b7           | b6  | b5 | b4 | b3 | b2  | b1 | b0 |
+ //       | Enhanced APU |     |    |    | CS | PAL | US | CE |
  //
  //    0x21 - Configuration1 - Read/Write
  //       | b7                  | b6 | b5 | b4 | b3 | b2 | b1 | b0 |
@@ -78,6 +78,8 @@ module tqvp_fjpolo_rv2a03 (
     localparam DATA_OUTPUT_MSB_REG_ADDR = 6'h24; // Address for data output MSB register
     localparam DATA_OUTPUT_LSB_REG_ADDR = 6'h25; // Address for data output LSB register
     
+    /* --- APU Registers --- */
+    reg [7:0] reg_apu [30:0];
 
     /* --- Registers --- */
     reg [7:0] reg_configuration0;
@@ -87,20 +89,18 @@ module tqvp_fjpolo_rv2a03 (
     reg [7:0] reg_data_output_lsb;
     reg [7:0] reg_status0;
 
+    /* --- Initial Values for Registers --- */
     initial reg_configuration0 = 8'h00;     // Initialize configuration register to 0
     initial reg_configuration1 = 8'h00;     // Initialize configuration register to 0
     initial reg_data_input = 8'h00;        // Initialize data input register to 0
-    initial reg_data_output_msb = 8'h00;   // Initialize data output MSB register to 0
+    initial reg_data_output_msb = 8'hFF;   // Initialize data output MSB register to 0
     initial reg_data_output_lsb = 8'h00;   // Initialize data output L
     initial reg_status0 = 8'h00;            // Initialize status register to 0
 
     /* --- Internal Wires/Signals --- */
     // Signals extracted from Configuration0 (for APU module)
-    wire apu_ce                     = reg_configuration0[0];
     wire apu_pal                    = reg_configuration0[1];
     wire apu_us                     = reg_configuration0[2];
-    wire apu_cs                     = reg_configuration0[3];
-    wire apu_even                   = reg_configuration0[4];
     wire apu_enhanced               = reg_configuration0[7];
 
     // Signals extracted from Configuration1 (for APU module)
@@ -142,6 +142,8 @@ module tqvp_fjpolo_rv2a03 (
     wire cpu_ce  = (div_cpu == div_cpu_n);
     wire ppu_ce  = (div_ppu == div_ppu_n);
     wire apu_phi2_clk = (div_cpu > 4 && div_cpu < div_cpu_n);
+    wire apu_ce = cpu_ce;
+    wire apu_cs = (address >= 'h00)&&(address < 'h18);
 
     //  The infamous NES jitter is important for accuracy, but wreks havok on modern devices and scalers,
     // so what I do here is pause the whole system for one PPU clock and insert a "fake" ppu clock to
@@ -262,9 +264,9 @@ module tqvp_fjpolo_rv2a03 (
                     faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
                 end
                 // TODO: Fix offender
-                // if ((skip_pixel)&&(faux_pixel_cnt == 0)) begin
-                //     faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
-                // end
+                if ((skip_pixel)&&(faux_pixel_cnt == 0)) begin
+                    faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
+                end
             end
         end
     end
@@ -277,9 +279,9 @@ module tqvp_fjpolo_rv2a03 (
                 if (faux_pixel_cnt == 3) begin
                     freeze_clocks <= 1'b0;
                 end
-                // if (skip_pixel && (faux_pixel_cnt == 0)) begin
-                //     freeze_clocks <= 1'b1;
-                // end
+                if (skip_pixel && (faux_pixel_cnt == 0)) begin
+                    freeze_clocks <= 1'b1;
+                end
             end
         end
     end
@@ -296,13 +298,14 @@ module tqvp_fjpolo_rv2a03 (
                                     1'b0;                                // 2'b11 - No write
 
     // APU.RW: 1 for Read
-    wire apu_rw =   (data_read_n == 2'b10) ? 1'b1 :    // 32-bit read
+    wire apu_rw_signal_RVdomain =   (data_read_n == 2'b10) ? 1'b1 :    // 32-bit read
                                     (data_read_n == 2'b01) ? 1'b1 :    // 16-bit read
                                     (data_read_n == 2'b00) ? 1'b1 :    // 8-bit read
                                     1'b0;                              // 2'b11 - No read
 
+    wire apu_rw = (apu_wr_signal_RVdomain) ? 1'b0 : 1'b1;
 
-    // // APU.CS: Asserted when APU chip select from config is high AND the peripheral address targets APU registers.
+    // APU.CS: Asserted when APU chip select from config is high AND the peripheral address targets APU registers.
     wire apu_cs_signal_DA = apu_cs && (address <= 6'h20);
 
     /* --- APU address --- */
@@ -311,6 +314,18 @@ module tqvp_fjpolo_rv2a03 (
 
     /* --- APU Sample Output --- */
     wire [15:0] apu_output_sample_16b;
+    always @(posedge clk) begin
+        if(!rst_n)
+            reg_data_output_msb <= 8'h00;
+        else
+            reg_data_output_msb <= apu_output_sample_16b[15:8];
+    end
+    always @(posedge clk) begin
+        if(!rst_n)
+            reg_data_output_lsb <= 8'h00;
+        else
+            reg_data_output_lsb <= apu_output_sample_16b[7:0];
+    end
 
     /* --- NES APU Instance --- */
     APU apu(
@@ -318,15 +333,15 @@ module tqvp_fjpolo_rv2a03 (
         .clk(clk),
         .PHI2(apu_phi2_clk),
         .ce(apu_ce),
-        .reset(!rst_n),
-        .cold_reset(!rst_n),
-        .allow_us(apu_us),
-        .PAL(apu_pal),
-        .ADDR(apu_address),
+        .reset(1'b0),
+        .cold_reset(1'b0),
+        .allow_us(1'b0),
+        .PAL(1'b0),
+        .ADDR(address),
         .DIN(data_in),
-        .RW(apu_rw),
-        .CS(apu_cs_signal_DA),
-        .audio_channels(apu_audio_channels),
+        .RW(apu_rw), // 0 - Write, 1 - Read
+        .CS(apu_cs),
+        .audio_channels(5'b11111),
         .DmaData(),         // Stubbed input
         .odd_or_even(apu_odd_or_even),
         .DmaAck(),          // Stubbed input
@@ -335,11 +350,29 @@ module tqvp_fjpolo_rv2a03 (
         .DmaReq(),          // Output, but ignored for now
         .DmaAddr(),         // Output, but ignored for now
         .IRQ(apu_IRQ),      // Captured in status register
-        .apu_enhanced_ce(apu_enhanced),
-        .apu_mapper_saturates(apu_mapper_saturates),
+        .apu_enhanced_ce(1'b0),
+        .apu_mapper_saturates(1'b0),
         .o_ce()             // APU's output enable (when Sample is valid)
     );
 
+    /* --- APU Registers Write Logic --- */
+    // This block handles writing to the reg_apu array, which mirrors the APU's internal registers.
+    always @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            // Initialize all elements of reg_apu to 0 on reset
+            for (int i = 0; i <= 30; i = i + 1) begin
+                reg_apu[i] <= 8'h00;
+            end
+        end else begin
+            // Only write if an 8-bit write operation is active
+            // and the address is within the intended APU register range (0x00 to 0x17)
+            if (data_write_n == 2'b00) begin // 2'b00 indicates an 8-bit write
+                if (address >= 6'h00 && address < 6'h20) begin
+                    reg_apu[address] <= data_in[7:0];
+                end
+            end
+        end
+    end
     // Implement a 32-bit read/write register at address 0
     reg [31:0] example_data;
     always @(posedge clk) begin
@@ -396,10 +429,13 @@ module tqvp_fjpolo_rv2a03 (
     end
 
     // data_out
-    assign data_out =   (address == CONFIGURATION0_REG_ADDR[5:0]) ? {24'h0, reg_configuration0} :
+    assign data_out =   (address < 6'h20) ? {24'h0, reg_apu[address]} :
+                        (address == CONFIGURATION0_REG_ADDR[5:0]) ? {24'h0, reg_configuration0} :
                         (address == CONFIGURATION1_REG_ADDR[5:0]) ? {24'h0, reg_configuration1} :
                         (address == STATUS1_REG_ADDR[5:0]) ? {24'h0, reg_status0} :
                         (address == DATA_INPUT_REG_ADDR[5:0]) ? {24'h0, reg_data_input} :
+                        (address == DATA_OUTPUT_MSB_REG_ADDR[5:0]) ? {24'h0, reg_data_output_msb} :
+                        (address == DATA_OUTPUT_LSB_REG_ADDR[5:0]) ? {24'h0, reg_data_output_lsb} :
                         32'h0;
 
     // All reads complete in 1 clock
