@@ -23,10 +23,12 @@ def xor_bit(value, bit_index):
 
 def pull_cs_high(value):
   temp = set_bit(value, 4)
+  #print(f"[pull_cs_high] CS: {(get_bit(value, 4) >> 4)}")
   return temp
 
 def pull_cs_low(value):
   temp = clear_bit(value, 4)
+  #print(f"[pull_cs_low] CS: {(get_bit(value, 4) >> 4)}")
   return temp
 
 def spi_clk_high(value):
@@ -149,16 +151,18 @@ async def spi_write_cpha0 (clk, port, address, data, width):
   await ClockCycles(clk, 10)  
 
 
-async def spi_read_cpha0 (clk, port_in, port_out, data_ready, address, data, width):
+async def spi_read_cpha0 (self, clk, port_in, port_out, data_ready, address, data, width):
   
   temp = port_in.value;
   result = pull_cs_high(temp)
+  # print(f"[spi_read_cpha0] address: 0x{address:02X} | RV_CS: {(get_bit(temp, 4) >> 4)} | APU_CS: {self.dut.o_apu_cs}")
   port_in.value = result
   await ClockCycles(clk, 10)
 
   # Pull CS low + Read command bit - bit 7 - MSBIT in first byte
   temp = port_in.value;
   result = pull_cs_low(temp)
+  # print(f"[spi_read_cpha0] address: 0x{address:02X} | RV_CS: {(get_bit(temp, 4) >> 4)} | APU_CS: {self.dut.o_apu_cs}")
   result2 = spi_mosi_low(result)
   port_in.value = result2
   await ClockCycles(clk, 10)

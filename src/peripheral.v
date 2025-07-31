@@ -44,6 +44,7 @@
  //      or indirectly via 0x23 write for specific commands, and 0x24/0x25 read for audio sample.
 
 `default_nettype none
+`define COCOTB_TESTING
 
 // Change the name of this module to something that reflects its functionality and includes your name for uniqueness
 // For example tqvp_yourname_spi for an SPI peripheral.
@@ -69,7 +70,22 @@ module tqvp_fjpolo_rv2a03 (
     output        data_ready,
 
     output        user_interrupt  // Dedicated interrupt request for this peripheral
+
+`ifdef COCOTB_TESTING
+    ,output [15:0] o_apu_samples,
+    output [0:0]   o_apu_ce,
+    output [0:0]   o_apu_cs,
+    output [0:0]   o_phi2,
+    output [0:0]   o_even
+`endif
 );
+
+`ifdef COCOTB_TESTING
+    assign o_apu_samples = apu_output_sample_16b;
+    assign o_apu_ce = apu_ce;
+    assign o_apu_cs = apu_cs;
+    assign o_phi2 = apu_phi2_clk;
+`endif
 
     localparam CONFIGURATION0_REG_ADDR = 6'h20; // Address for configuration0 register
     localparam CONFIGURATION1_REG_ADDR = 6'h21; // Address for configuration1 register
@@ -143,7 +159,7 @@ module tqvp_fjpolo_rv2a03 (
     wire ppu_ce  = (div_ppu == div_ppu_n);
     wire apu_phi2_clk = (div_cpu > 4 && div_cpu < div_cpu_n);
     wire apu_ce = cpu_ce;
-    wire apu_cs = (address >= 'h00)&&(address < 'h18);
+    wire apu_cs = (address >= 'h00)&&(address <= 'h25);
 
     //  The infamous NES jitter is important for accuracy, but wreks havok on modern devices and scalers,
     // so what I do here is pause the whole system for one PPU clock and insert a "fake" ppu clock to
@@ -306,7 +322,7 @@ module tqvp_fjpolo_rv2a03 (
     wire apu_rw = (apu_wr_signal_RVdomain) ? 1'b0 : 1'b1;
 
     // APU.CS: Asserted when APU chip select from config is high AND the peripheral address targets APU registers.
-    wire apu_cs_signal_DA = apu_cs && (address <= 6'h20);
+    wire apu_cs_signal_DA = apu_cs && (address <= 6'h18);
 
     /* --- APU address --- */
     wire [4:0] apu_address;
@@ -333,11 +349,11 @@ module tqvp_fjpolo_rv2a03 (
         .clk(clk),
         .PHI2(apu_phi2_clk),
         .ce(apu_ce),
-        .reset(1'b0),
-        .cold_reset(1'b0),
+        .reset(rst_n),
+        .cold_reset(rst_n),
         .allow_us(1'b0),
         .PAL(1'b0),
-        .ADDR(address),
+        .ADDR(address[4:0]),
         .DIN(data_in),
         .RW(apu_rw), // 0 - Write, 1 - Read
         .CS(apu_cs),

@@ -4,6 +4,7 @@
 import cocotb
 from cocotb.clock import Clock
 from cocotb.triggers import ClockCycles, RisingEdge
+from cocotb.triggers import Timer
 
 from tqv import TinyQV
 import matplotlib.pyplot as plt
@@ -232,6 +233,7 @@ async def test_project(dut):
     # Let's capture for 5 periods to see the waveform clearly
     num_cycles_to_capture = int(22727 * 5)
 
+    print("************************************************************************************************")
     for i in range(num_cycles_to_capture):
         await RisingEdge(dut.clk)
         # Capture the current time and the 16-bit mixed sample output
@@ -239,7 +241,10 @@ async def test_project(dut):
         msb_value = await tqv.read_byte_reg(DATA_OUTPUT_MSB_REG_ADDR)
         lsb_value = await tqv.read_byte_reg(DATA_OUTPUT_LSB_REG_ADDR)
         
-        print("Sample:", i, "MSB:", msb_value, "LSB:", lsb_value)
+
+        print(f"i: {i} | clk: {dut.clk} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | sample: {dut.o_apu_samples}")
+        # print("Sample:", i, "MSB:", msb_value, "LSB:", lsb_value)
+        
         # Combine MSB and LSB into a 16-bit value
         combined_sample = (msb_value << 8) | lsb_value
         
@@ -252,7 +257,9 @@ async def test_project(dut):
 
         output_samples.append(signed_sample)
         timestamps.append(i * 100e-9) # Time in seconds (i * clock_period)
+        await Timer(1000, units='ns')
 
+    print("************************************************************************************************")
     dut._log.info(f"Captured {len(output_samples)} samples.")
 
     # --- Plotting the captured data ---

@@ -4,6 +4,7 @@
  */
 
 `default_nettype none
+`define COCOTB_TESTING
 
 /** TinyQV peripheral test using SPI */
 module tt_um_tqv_peripheral_harness (
@@ -14,7 +15,16 @@ module tt_um_tqv_peripheral_harness (
     output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
     input  wire       ena,      // always 1 when the design is powered, so you can ignore it
     input  wire       clk,      // clock
+`ifndef COCOTB_TESTING
     input  wire       rst_n     // reset_n - low to reset
+`else
+    input  wire        rst_n,     // reset_n - low to reset
+    output wire [15:0] o_apu_samples,
+    output wire [0:0]  o_apu_ce,  
+    output wire [0:0]  o_apu_cs,
+    output wire [0:0]  o_phi2,
+    output wire [0:0]  o_even
+`endif
 );
 
   // SPI access to registers
@@ -50,6 +60,15 @@ module tt_um_tqv_peripheral_harness (
     .data_out(data_out),
     .data_ready(data_ready),
     .user_interrupt(user_interrupt)
+`ifdef COCOTB_TESTING
+    ,
+    .o_apu_samples(o_apu_samples),
+    .o_apu_ce(o_apu_ce),  
+    .o_apu_cs(o_apu_cs),
+    .o_phi2(o_phi2),
+    .o_even(o_even)
+
+`endif
   );
 
   // SPI data indications

@@ -36,7 +36,7 @@ class TinyQV:
     # reg is the address of the register in the range 0-15
     # The returned value is the data read from the register, in the range 0-255
     async def read_byte_reg(self, reg):
-        return await spi_read_cpha0(self.dut.clk, self.dut.uio_in, self.dut.uio_out, self.dut.uio_out[1], reg, 0, 0)
+        return await spi_read_cpha0(self, self.dut.clk, self.dut.uio_in, self.dut.uio_out, self.dut.uio_out[1], reg, 0, 0)
 
     # Write a value to a half word register in your design
     # reg is the address of the register in the range 0-15

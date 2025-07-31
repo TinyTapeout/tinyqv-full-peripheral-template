@@ -1,5 +1,6 @@
 `default_nettype none
 `timescale 1ns / 1ps
+`define COCOTB_TESTING
 
 /* This testbench just instantiates the module and makes some convenient wires
    that can be driven / tested by the cocotb test.py.
@@ -26,6 +27,13 @@ module tb ();
   wire VPWR = 1'b1;
   wire VGND = 1'b0;
 `endif
+ `ifdef COCOTB_TESTING
+    wire [15:0] o_apu_samples;
+    wire [0:0]  o_apu_ce;  
+    wire [0:0]  o_apu_cs;
+    wire [0:0]  o_phi2;
+    wire [0:0]  o_even;
+`endif 
 
   tt_um_tqv_peripheral_harness test_harness (
 
@@ -43,6 +51,13 @@ module tb ();
       .ena    (ena),      // enable - goes high when design is selected
       .clk    (clk),      // clock
       .rst_n  (rst_n)     // not reset
+`ifdef COCOTB_TESTING
+     ,.o_apu_samples(o_apu_samples),
+      .o_apu_ce(o_apu_ce),  
+      .o_apu_cs(o_apu_cs),
+      .o_phi2(o_phi2),
+      .o_even(o_even)
+`endif
   );
 
 endmodule

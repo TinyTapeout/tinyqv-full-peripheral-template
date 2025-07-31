@@ -51,3 +51,5 @@ MODULE = test
 include $(shell cocotb-config --makefiles)/Makefile.sim
 
 export COCOTB_RESOLVE_X = ZEROS
+
+COMPILE_ARGS += -DCOCOTB_TESTING
