@@ -311,22 +311,30 @@ module TriangleChan (
     output wire [3:0]  o_apuTri_sample_latch
 `endif
 );
-`ifdef COCOTB_TESTING
-    assign o_apuTri_Period         = Period;
-    assign o_apuTri_applied_period = applied_period;
-    assign o_apuTri_TimerCtr       = TimerCtr;
-    assign o_apuTri_SeqPos         = SeqPos;
-    assign o_apuTri_LinCtrPeriod   = LinCtrPeriod;
-    assign o_apuTri_LinCtrPeriod_1 = LinCtrPeriod_1;
-    assign o_apuTri_LinCtr         = LinCtr;
-    assign o_apuTri_LinCtrl        = LinCtrl;
-    assign o_apuTri_line_reload    = line_reload;
-    assign o_apuTri_LinCtrZero     = LinCtrZero;
-    assign o_apuTri_lc             = lc;
-    assign o_apuTri_subunit_write  = subunit_write;
-    assign o_apuTri_sample_latch   = sample_latch;
-`endif
+
+(* keep *) reg apu_reg0A_is_ff = 0;
+always @(posedge clk) begin
+    if ((Addr[1:0] == 'h02)&&(DIN[7:0] == 'hFF)) begin
+        apu_reg0A_is_ff <= DIN[7];
+    end
+    if(reset)
+        apu_reg0A_is_ff <= 0;
+end
+(* keep *) reg apu_reg0B_is_aa = 0;
+always @(posedge clk) begin
+    if ((Addr[1:0] == 'h03)&&(DIN[7:0] == 'hAA)) begin
+        apu_reg0B_is_aa <= DIN[7];
+    end
+    if (reset)
+        apu_reg0B_is_aa <= 0;
+end
+
+
+
+
+
     logic [10:0] Period, applied_period, TimerCtr;
+    initial Period = 'h3E;
     logic [4:0] SeqPos;
     logic [6:0] LinCtrPeriod, LinCtrPeriod_1, LinCtr;
     logic LinCtrl, line_reload;
@@ -439,6 +447,7 @@ module TriangleChan_enhanced_5b (
     output logic       IsNonZero
 );
     logic [10:0] Period, applied_period, TimerCtr;
+    initial Period = 'h3E;
     logic [4:0] SeqPos;              // Change SeqPos to 5 bits
     logic [6:0] LinCtrPeriod, LinCtrPeriod_1, LinCtr;
     logic LinCtrl, line_reload;
@@ -1169,6 +1178,29 @@ module APU (
     output wire [3:0]  o_apuTri_sample_latch
 `endif
 );
+
+(* keep *) reg apu_reg0A_is_ff = 0;
+always @(posedge clk) begin
+    if ((ADDR[4:0] == 'h0A)&&(DIN[7:0] == 'hFF)) begin
+        apu_reg0A_is_ff <= DIN[7];
+    end
+    if(reset)
+        apu_reg0A_is_ff <= 0;
+end
+(* keep *) reg apu_reg0B_is_aa = 0;
+always @(posedge clk) begin
+    if ((ADDR[4:0] == 'h0B)&&(DIN[7:0] == 'hAA)) begin
+        apu_reg0B_is_aa <= DIN[7];
+    end
+    if (reset)
+        apu_reg0B_is_aa <= 0;
+end
+
+
+
+
+
+
 
 reg [15:0] sample_reg;
 initial sample_reg = 'h0;

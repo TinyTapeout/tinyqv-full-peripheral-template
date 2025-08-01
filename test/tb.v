@@ -1,6 +1,5 @@
 `default_nettype none
 `timescale 1ns / 1ps
-`define COCOTB_TESTING
 
 /* This testbench just instantiates the module and makes some convenient wires
    that can be driven / tested by the cocotb test.py.
@@ -27,28 +26,6 @@ module tb ();
   wire VPWR = 1'b1;
   wire VGND = 1'b0;
 `endif
- `ifdef COCOTB_TESTING
-    wire [15:0] o_apu_samples;
-    wire [0:0]  o_apu_ce;  
-    wire [0:0]  o_apu_cs;
-    wire [0:0]  o_phi2;
-    wire [0:0]  o_even;
-    wire [4:0] o_Sq1Sample;
-    wire [4:0] o_Sq2Sample;
-    wire [3:0] o_TriSample;
-    wire [4:0] o_enabled_buffer;
-    wire [4:0] o_enabled_buffer1;
-    wire [7:0] o_dout;
-    wire [7:0] o_aclk1;
-    wire [0:0]  o_ApuMW0;
-    wire [0:0]  o_ApuMW1;
-    wire [0:0]  o_ApuMW2;
-    wire [0:0]  o_ApuMW3;
-    wire [0:0]  o_ApuMW4;
-    wire [0:0]  o_ApuMW5;
-    wire [4:0]  o_enabled;
-    wire [0:0]  o_ClkL;
-    wire [0:0]  o_ClkE;
         // Triangle wave
     wire        o_apuTri_clk;
     wire        o_apuTri_phi1;
@@ -77,7 +54,6 @@ module tb ();
     wire [0:0]  o_apuTri_lc;
     wire [0:0]  o_apuTri_subunit_write;
     wire [3:0]  o_apuTri_sample_latch;
-`endif 
 
   tt_um_tqv_peripheral_harness test_harness (
 
@@ -95,29 +71,6 @@ module tb ();
       .ena    (ena),      // enable - goes high when design is selected
       .clk    (clk),      // clock
       .rst_n  (rst_n)     // not reset
-`ifdef COCOTB_TESTING
-     ,.o_apu_samples(o_apu_samples),
-      .o_apu_ce(o_apu_ce),  
-      .o_apu_cs(o_apu_cs),
-      .o_phi2(o_phi2),
-      .o_even(o_even),
-      // APU Debug
-      .o_Sq1Sample(o_Sq1Sample),
-      .o_Sq2Sample(o_Sq2Sample),
-      .o_TriSample(o_TriSample),
-      .o_enabled_buffer(o_enabled_buffer),
-      .o_enabled_buffer1(o_enabled_buffer1),
-      .o_enabled(o_enabled),
-      .o_dout(o_dout),
-      .o_aclk1(o_aclk1),
-      .o_ApuMW0(o_ApuMW0),
-      .o_ApuMW1(o_ApuMW1),
-      .o_ApuMW2(o_ApuMW2),
-      .o_ApuMW3(o_ApuMW3),
-      .o_ApuMW4(o_ApuMW4),
-      .o_ApuMW5(o_ApuMW5),
-      .o_ClkL(o_ClkL),
-      .o_ClkE(o_ClkE),
       // Triangle wave
       .o_apuTri_clk(o_apuTri_clk),
       .o_apuTri_phi1(o_apuTri_phi1),
@@ -146,7 +99,6 @@ module tb ();
       .o_apuTri_lc(o_apuTri_lc),
       .o_apuTri_subunit_write(o_apuTri_subunit_write),
       .o_apuTri_sample_latch(o_apuTri_sample_latch)
-`endif
   );
 
 endmodule

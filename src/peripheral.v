@@ -44,7 +44,6 @@
  //      or indirectly via 0x23 write for specific commands, and 0x24/0x25 read for audio sample.
 
 `default_nettype none
-`define COCOTB_TESTING
 
 // Change the name of this module to something that reflects its functionality and includes your name for uniqueness
 // For example tqvp_yourname_spi for an SPI peripheral.
@@ -126,14 +125,6 @@ module tqvp_fjpolo_rv2a03 (
 );
 
     wire [7:0] apu_dout;
-`ifdef COCOTB_TESTING
-    assign o_apu_samples = apu_output_sample_16b;
-    assign o_apu_ce = apu_ce;
-    assign o_apu_cs = apu_cs;
-    assign o_phi2 = apu_phi2_clk;
-    assign o_even = odd_or_even;
-    assign o_dout = apu_dout;
-`endif
 
     localparam CONFIGURATION0_REG_ADDR = 6'h20; // Address for configuration0 register
     localparam CONFIGURATION1_REG_ADDR = 6'h21; // Address for configuration1 register
@@ -317,6 +308,14 @@ module tqvp_fjpolo_rv2a03 (
             reg_data_output_lsb <= apu_output_sample_16b[7:0];
     end
 
+    /* Cold Reset */ 
+    reg cold_reset_counter;
+    initial cold_reset_counter = 1'b0;
+    always @(posedge clk) begin
+        if (!cold_reset_counter) begin
+            cold_reset_counter <= 1'b1;
+        end
+    end
     /* --- NES APU Instance --- */
     APU apu(
         .MMC5(1'b0),
@@ -324,7 +323,7 @@ module tqvp_fjpolo_rv2a03 (
         .PHI2(apu_phi2_clk),
         .ce(apu_ce),
         .reset(~rst_n),
-        .cold_reset(1'b0),
+        .cold_reset(~rst_n),
         .allow_us(1'b1),
         .PAL(1'b0),
         .ADDR(address[4:0]),
@@ -343,23 +342,6 @@ module tqvp_fjpolo_rv2a03 (
         .apu_enhanced_ce(1'b0),
         .apu_mapper_saturates(1'b0),
         .o_ce()            // APU's output enable (when Sample is valid)
-`ifdef COCOTB_TESTING
-        // APU Debug
-       ,.o_Sq1Sample(o_Sq1Sample),
-        .o_Sq2Sample(o_Sq2Sample),
-        .o_TriSample(o_TriSample),
-        .o_enabled_buffer(o_enabled_buffer),
-        .o_enabled_buffer1(o_enabled_buffer1),
-        .o_enabled(o_enabled),
-        .o_aclk1(o_aclk1),
-        .o_ApuMW0(o_ApuMW0),
-        .o_ApuMW1(o_ApuMW1),
-        .o_ApuMW2(o_ApuMW2),
-        .o_ApuMW3(o_ApuMW3),
-        .o_ApuMW4(o_ApuMW4),
-        .o_ApuMW5(o_ApuMW5),
-        .o_ClkL(o_ClkL),
-        .o_ClkE(o_ClkE),
         // Triangle wave
         .o_apuTri_clk(o_apuTri_clk),
         .o_apuTri_phi1(o_apuTri_phi1),
@@ -389,7 +371,6 @@ module tqvp_fjpolo_rv2a03 (
         .o_apuTri_subunit_write(o_apuTri_subunit_write),
         .o_apuTri_sample_latch(o_apuTri_sample_latch)
 
-`endif
     );
 
     /* --- APU Registers Write Logic --- */

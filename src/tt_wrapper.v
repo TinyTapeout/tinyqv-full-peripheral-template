@@ -4,7 +4,6 @@
  */
 
 `default_nettype none
-`define COCOTB_TESTING
 
 /** TinyQV peripheral test using SPI */
 module tt_um_tqv_peripheral_harness (
@@ -15,32 +14,7 @@ module tt_um_tqv_peripheral_harness (
     output wire [7:0] uio_oe,   // IOs: Enable path (active high: 0=input, 1=output)
     input  wire       ena,      // always 1 when the design is powered, so you can ignore it
     input  wire       clk,      // clock
-`ifndef COCOTB_TESTING
     input  wire       rst_n     // reset_n - low to reset
-`else
-    input  wire        rst_n,     // reset_n - low to reset
-    output wire [15:0] o_apu_samples,
-    output wire [0:0]  o_apu_ce,  
-    output wire [0:0]  o_apu_cs,
-    output wire [0:0]  o_phi2,
-    output wire [0:0]  o_even,
-    // APU Debug
-    output  wire [4:0]  o_Sq1Sample,
-    output  wire [4:0]  o_Sq2Sample,
-    output  wire [3:0]  o_TriSample,
-    output  wire [4:0]  o_enabled_buffer,
-    output  wire [4:0]  o_enabled_buffer1,
-    output  wire [4:0]  o_enabled,
-    output  wire [7:0]  o_dout,
-    output  wire [7:0]  o_aclk1,
-    output  wire [0:0]  o_ApuMW0,
-    output  wire [0:0]  o_ApuMW1,
-    output  wire [0:0]  o_ApuMW2,
-    output  wire [0:0]  o_ApuMW3,
-    output  wire [0:0]  o_ApuMW4,
-    output  wire [0:0]  o_ApuMW5,
-    output  wire [0:0]  o_ClkL,
-    output  wire [0:0]  o_ClkE,
     // Triangle wave
     output wire        o_apuTri_clk,
     output wire        o_apuTri_phi1,
@@ -70,7 +44,6 @@ module tt_um_tqv_peripheral_harness (
     output wire [0:0]  o_apuTri_subunit_write,
     output wire [3:0]  o_apuTri_sample_latch
 
-`endif
 );
 
   // SPI access to registers
@@ -94,7 +67,7 @@ module tt_um_tqv_peripheral_harness (
 
   // The peripheral under test.
   // **** Change the module name from tqvp_example to match your peripheral. ****
-  tqvp_fjpolo_rv2a03 user_peripheral(
+  tqvp_example user_peripheral(
     .clk(clk),
     .rst_n(rst_reg_n),
     .ui_in(ui_in_sync),
@@ -106,30 +79,6 @@ module tt_um_tqv_peripheral_harness (
     .data_out(data_out),
     .data_ready(data_ready),
     .user_interrupt(user_interrupt)
-`ifdef COCOTB_TESTING
-    ,
-    .o_apu_samples(o_apu_samples),
-    .o_apu_ce(o_apu_ce),  
-    .o_apu_cs(o_apu_cs),
-    .o_phi2(o_phi2),
-    .o_even(o_even),
-    // APU Debug
-    .o_Sq1Sample(o_Sq1Sample),
-    .o_Sq2Sample(o_Sq2Sample),
-    .o_TriSample(o_TriSample),
-    .o_enabled_buffer(o_enabled_buffer),
-    .o_enabled_buffer1(o_enabled_buffer1),
-    .o_enabled(o_enabled),
-    .o_dout(o_dout),
-    .o_aclk1(o_aclk1),
-    .o_ApuMW0(o_ApuMW0),
-    .o_ApuMW1(o_ApuMW1),
-    .o_ApuMW2(o_ApuMW2),
-    .o_ApuMW3(o_ApuMW3),
-    .o_ApuMW4(o_ApuMW4),
-    .o_ApuMW5(o_ApuMW5),
-    .o_ClkL(o_ClkL),
-    .o_ClkE(o_ClkE),
     // Triangle wave
     .o_apuTri_clk(o_apuTri_clk),
     .o_apuTri_phi1(o_apuTri_phi1),
@@ -158,7 +107,6 @@ module tt_um_tqv_peripheral_harness (
     .o_apuTri_lc(o_apuTri_lc),
     .o_apuTri_subunit_write(o_apuTri_subunit_write),
     .o_apuTri_sample_latch(o_apuTri_sample_latch)
-`endif
   );
 
   // SPI data indications

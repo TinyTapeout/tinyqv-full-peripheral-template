@@ -182,8 +182,9 @@ async def test_project(dut):
     # Note: The triangle channel doesn't have a volume envelope like squares; its volume is fixed.
     # The linear counter acts like a length counter for the triangle.
     # WRITE $7F TO APU_TRI_REG0
-    await tqv.write_byte_reg(APU_TRI_REG0_ADDRESS, 0x7F)
-    assert await tqv.read_byte_reg(APU_TRI_REG0_ADDRESS) == 0x7F
+    dut._log.info(f"Attempting to write value {hex(0xFF)} to address {hex(APU_TRI_REG0_ADDRESS)}")
+    await tqv.write_byte_reg(APU_TRI_REG0_ADDRESS, 0xFF)
+    assert await tqv.read_byte_reg(APU_TRI_REG0_ADDRESS) == 0xFF
 
     # Register $4009: Unused (write $00)
     # WRITE $00 TO APU_TRI_REG1
@@ -193,16 +194,20 @@ async def test_project(dut):
     # Register $400A: Timer Low Byte
     # Write the lower 8 bits of the calculated timer period (62)
     # WRITE TRI_TIMER_PERIOD_LOW TO APU_TRI_REG2
-    await tqv.write_byte_reg(APU_TRI_REG2_ADDRESS, TRI_TIMER_PERIOD_LOW)
-    assert await tqv.read_byte_reg(APU_TRI_REG2_ADDRESS) == TRI_TIMER_PERIOD_LOW
+    #await tqv.write_byte_reg(APU_TRI_REG2_ADDRESS, TRI_TIMER_PERIOD_LOW)
+    #assert await tqv.read_byte_reg(APU_TRI_REG2_ADDRESS) == TRI_TIMER_PERIOD_LOW
+    await tqv.write_byte_reg(APU_TRI_REG2_ADDRESS, 0xFF)
+    assert await tqv.read_byte_reg(APU_TRI_REG2_ADDRESS) == 0xFF
 
     # Register $400B: Length Counter Load, Timer High Byte
     # Combine the length counter load value with the upper 3 bits of the timer period.
     # For sustained note, the linear counter control bit in $4008 is more important.
     # We'll just put the timer high bits here.
     # WRITE (LENGTH_COUNTER_LOAD_VALUE | TRI_TIMER_PERIOD_HIGH) TO APU_TRI_REG3
-    await tqv.write_byte_reg(APU_TRI_REG3_ADDRESS, (LENGTH_COUNTER_LOAD_VALUE | TRI_TIMER_PERIOD_HIGH))
-    assert await tqv.read_byte_reg(APU_TRI_REG3_ADDRESS) == (LENGTH_COUNTER_LOAD_VALUE | TRI_TIMER_PERIOD_HIGH)
+    #await tqv.write_byte_reg(APU_TRI_REG3_ADDRESS, (LENGTH_COUNTER_LOAD_VALUE | TRI_TIMER_PERIOD_HIGH))
+    #assert await tqv.read_byte_reg(APU_TRI_REG3_ADDRESS) == (LENGTH_COUNTER_LOAD_VALUE | TRI_TIMER_PERIOD_HIGH)
+    await tqv.write_byte_reg(APU_TRI_REG3_ADDRESS, 0xAA)
+    assert await tqv.read_byte_reg(APU_TRI_REG3_ADDRESS) == 0xAA
 
     # --- Enable Channels ---
     # Register $4015: APU Status / Channel Enable
@@ -221,7 +226,6 @@ async def test_project(dut):
     # For continuous sound, 4-step (no IRQ) is common.
     # WRITE $00 TO APU_FRAME_COUNTER_REG
     await tqv.write_byte_reg(APU_FRAME_COUNTER_REG_ADDRESS, 0x00)
-    print(f"clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
     assert await tqv.read_byte_reg(APU_FRAME_COUNTER_REG_ADDRESS) == 0x00 # Corrected: Check APU_FRAME_COUNTER_REG_ADDRESS
 
     dut._log.info("APU configured. Starting output capture for plotting.")
@@ -241,7 +245,7 @@ async def test_project(dut):
 
     print("************************************************************************************************")
     # for i in range(CYCLES_TO_CAPTURE):
-    for i in range(100):
+    for i in range(5000):
         # await RisingEdge(dut.clk)
         
         # # Triangle: New timer value
@@ -257,13 +261,12 @@ async def test_project(dut):
         # Read MSB and LSB registers and combine them into a 16-bit signed integer
         msb_value = await tqv.read_byte_reg(DATA_OUTPUT_MSB_REG_ADDR)
         lsb_value = await tqv.read_byte_reg(DATA_OUTPUT_LSB_REG_ADDR)
-        if(dut.o_aclk1 == 1):
-            print(f"i: {i} | clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
-        # print("Sample:", i, "MSB:", msb_value, "LSB:", lsb_value)
-        if(dut.o_dout.value.integer & 0x40):
-            # print("    Read Interrupt Status. Clear flags.")
-            status_value = await tqv.read_byte_reg(APU_STATUS_REG_ADDRESS)
-            # print(f"Status flags: {status_value}")
+        # print(f"i: {i} | clk: {dut.clk} | reset: {dut.rst_n} | phi2: {dut.o_phi2} | CE: {dut.o_apu_ce} | CS: {dut.o_apu_cs} | even: {dut.o_even} | out: {dut.o_apu_samples} | Sq1: {dut.o_Sq1Sample} | Sq2: {dut.o_Sq2Sample} | Tri: {dut.o_TriSample} | enabled_buffer: {dut.o_enabled_buffer} | enabled_buffer1: {dut.o_enabled_buffer1} | enabled: {dut.o_enabled}  | dout: {dut.o_dout} | aclk1: {dut.o_aclk1}")
+        # # print("Sample:", i, "MSB:", msb_value, "LSB:", lsb_value)
+        # if(dut.o_dout.value.integer & 0x40):
+        #     # print("    Read Interrupt   . Clear flags.")
+        #     status_value = await tqv.read_byte_reg(APU_STATUS_REG_ADDRESS)
+        #     # print(f"Status flags: {status_value}")
 
         # Combine MSB and LSB into a 16-bit value
         combined_sample = (msb_value << 8) | lsb_value
@@ -277,21 +280,21 @@ async def test_project(dut):
 
         output_samples.append(signed_sample)
         timestamps.append(i * 100e-9) # Time in seconds (i * clock_period)
-        # await Timer(1000, units='ns')
+        await Timer(1000, units='ns')
 
     print("************************************************************************************************")
     dut._log.info(f"Captured {len(output_samples)} samples.")
 
     # --- Plotting the captured data ---
-    plt.figure(figsize=(12, 6))
-    plt.plot(np.array(timestamps) * 1e3, output_samples) # Convert time to milliseconds for better readability
-    plt.title('APU Mixed Output Sample (440Hz)')
-    plt.xlabel('Time (ms)')
-    plt.ylabel('Sample Value (16-bit signed)')
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig('apu_output_sample.png') # Save the plot to a file
-    dut._log.info("Plot saved as apu_output_sample.png")
+    # # plt.figure(figsize=(12, 6))
+    # # plt.plot(np.array(timestamps) * 1e3, output_samples) # Convert time to milliseconds for better readability
+    # # plt.title('APU Mixed Output Sample (440Hz)')
+    # # plt.xlabel('Time (ms)')
+    # # plt.ylabel('Sample Value (16-bit signed)')
+    # # plt.grid(True)
+    # # plt.tight_layout()
+    # # plt.savefig('apu_output_sample.png') # Save the plot to a file
+    # # dut._log.info("Plot saved as apu_output_sample.png")
 
     dut._log.info("Test finished.")
 
