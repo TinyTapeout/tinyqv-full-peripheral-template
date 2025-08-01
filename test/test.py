@@ -240,8 +240,8 @@ async def test_project(dut):
     CYCLES_TO_CAPTURE = int(CYCLES_PER_PERIOD * NUM_OF_PERIODS)
 
     print("************************************************************************************************")
-    for i in range(CYCLES_TO_CAPTURE):
-        await RisingEdge(dut.o_aclk1)
+    # for i in range(CYCLES_TO_CAPTURE):
+    for i in range(100):
         # await RisingEdge(dut.clk)
         
         # # Triangle: New timer value

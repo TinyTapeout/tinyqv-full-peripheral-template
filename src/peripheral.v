@@ -269,9 +269,9 @@ module tqvp_fjpolo_rv2a03 (
         end
 
         if (~rst_n)
-            odd_or_even <= 1'b1;
+            apu_odd_or_even <= 1'b1;
         else if (cpu_ce) 
-            odd_or_even <= ~odd_or_even;
+            apu_odd_or_even <= ~apu_odd_or_even;
 
         // Realign if the system type changes.
         apu_last_pal <= apu_pal;

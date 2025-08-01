@@ -1254,7 +1254,7 @@ assign Sample = sample_reg;
     // aclk1_d  -- Aclk1, except delayed by 1 cpu cycle exactly. Drives he half/quarter signals and len counter
     // aclk2    -- Aligned with CPU phi2, also every other frame
     // write    -- Happens on CPU phi2 (Not M2!). Most of these are latched by one of the above clocks.
-    logic aclk1, aclk2, aclk1_delayed, phi1;
+    (* keep *) logic aclk1, aclk2, aclk1_delayed, phi1; /* synthesis syn_keep=1 */ 
     // assign aclk1 = (ce)&(odd_or_even);              // Defined as the cpu tick when the frame counter increases
     assign aclk1 = (odd_or_even);              // Defined as the cpu tick when the frame counter increases
     assign aclk2 = phi2_ce & ~odd_or_even;          // Tick on odd cycles, not 50% duty cycle so it covers 2 cpu cycles
@@ -1281,7 +1281,7 @@ assign Sample = sample_reg;
     assign ApuMW5 = ADDR[4:2]==5; // Control registers
 
     logic Sq1NonZero, Sq2NonZero, TriNonZero, TriNonZero_enhanced, NoiNonZero;
-    logic ClkE, ClkL;
+    (* keep *) logic ClkE, ClkL; /* synthesis syn_keep=1 */
 
     logic [4:0] enabled_buffer, enabled_buffer_1;
     assign Enabled = aclk1 ? enabled_buffer : enabled_buffer_1;
@@ -1306,7 +1306,7 @@ assign Sample = sample_reg;
         end
     end
 
-    logic frame_quarter, frame_half;
+    (* keep *) logic frame_quarter, frame_half; /* synthesis syn_keep=1 */
     assign ClkE = ((frame_quarter)&(aclk1_delayed));
     assign ClkL = ((frame_half)&(aclk1_delayed));
 
@@ -1374,7 +1374,7 @@ assign Sample = sample_reg;
         .lc_load      (lc_load),
         .LenCtr_Clock (ClkE),
         .LinCtr_Clock (ClkL),
-        .Enabled      (Enabled[2]),
+        .Enabled      (1'b1),
         .Sample       (TriSample),
         .IsNonZero    (TriNonZero)
 `ifdef COCOTB_TESTING
