@@ -280,7 +280,6 @@ async def test_project(dut):
 
         output_samples.append(signed_sample)
         timestamps.append(i * 100e-9) # Time in seconds (i * clock_period)
-        await Timer(1000, units='ns')
 
     print("************************************************************************************************")
     dut._log.info(f"Captured {len(output_samples)} samples.")
