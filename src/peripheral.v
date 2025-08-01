@@ -293,10 +293,11 @@ module tqvp_fjpolo_rv2a03 (
 
     /* --- APU Registers Write Logic --- */
     // This block handles writing to the reg_apu array, which mirrors the APU's internal registers.
+    integer i;
     always @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             // Initialize all elements of reg_apu to 0 on reset
-            for (int i = 0; i <= 30; i = i + 1) begin
+            for (i = 0; i <= 30; i = i + 1) begin
                 reg_apu[i] <= 8'h00;
             end
         end else begin
