@@ -37,8 +37,7 @@ module tt_um_tqv_peripheral_harness (
   always @(negedge clk) rst_reg_n <= rst_n;
 
   // The peripheral under test.
-  // **** Change the module name from tqvp_example to match your peripheral. ****
-  tqvp_example user_peripheral(
+  tqvp_dsatizabal_fpu user_peripheral(
     .clk(clk),
     .rst_n(rst_reg_n),
     .ui_in(ui_in_sync),
@@ -76,7 +75,7 @@ module tt_um_tqv_peripheral_harness (
 
   synchronizer #(.STAGES(2), .WIDTH(1)) synchronizer_spi_cs_n_inst (.clk(clk), .data_in(spi_cs_n), .data_out(spi_cs_n_sync));
   synchronizer #(.STAGES(2), .WIDTH(1)) synchronizer_spi_clk_inst  (.clk(clk), .data_in(spi_clk),  .data_out(spi_clk_sync));
-  synchronizer #(.STAGES(2), .WIDTH(1)) synchronizer_spi_mosi_inst (.clk(clk), .data_in(spi_mosi), .data_out(spi_mosi_sync));  
+  synchronizer #(.STAGES(2), .WIDTH(1)) synchronizer_spi_mosi_inst (.clk(clk), .data_in(spi_mosi), .data_out(spi_mosi_sync));
 
   // The SPI instance
   spi_reg #(.ADDR_W(6), .REG_W(32)) i_spi_reg(
