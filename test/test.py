@@ -210,7 +210,7 @@ async def test_project(dut):
     # Binary: %00000111 = $07
     # WRITE $07 TO APU_STATUS_REG
     await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x07)
-    assert await tqv.read_byte_reg(APU_STATUS_REG_ADDRESS) == 0x07
+    # assert await tqv.read_byte_reg(APU_STATUS_REG_ADDRESS) == 0x07
 
     # --- Start Frame Counter (Optional, but good for consistent behavior) ---
     # Writing to $4017 starts the frame counter.

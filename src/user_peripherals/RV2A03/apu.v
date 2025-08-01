@@ -1374,7 +1374,7 @@ assign Sample = sample_reg;
         .lc_load      (lc_load),
         .LenCtr_Clock (ClkE),
         .LinCtr_Clock (ClkL),
-        .Enabled      (1'b1),
+        .Enabled      (Enabled[2]),
         .Sample       (TriSample),
         .IsNonZero    (TriNonZero)
 `ifdef COCOTB_TESTING

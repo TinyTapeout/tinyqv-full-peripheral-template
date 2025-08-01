@@ -131,7 +131,7 @@ module tqvp_fjpolo_rv2a03 (
     assign o_apu_ce = apu_ce;
     assign o_apu_cs = apu_cs;
     assign o_phi2 = apu_phi2_clk;
-    assign o_even = apu_odd_or_even;
+    assign o_even = odd_or_even;
     assign o_dout = apu_dout;
 `endif
 
@@ -189,8 +189,7 @@ module tqvp_fjpolo_rv2a03 (
 
     // odd or even apu cycle, AKA div_apu or apu_/clk2. This is actually not 50% duty cycle. It is high for 18
     // master cycles and low for 6 master cycles. It is considered active when low or "even".
-    reg apu_odd_or_even; // 1 == odd, 0 == even
-    initial apu_odd_or_even = 1'b1;
+    reg odd_or_even = 1; // 1 == odd, 0 == even
 
     // XXX: Because we are using div4 clock divider for PAL, master clock should be 21.2813696
     // Clock Dividers
@@ -233,8 +232,6 @@ module tqvp_fjpolo_rv2a03 (
     initial cpu_tick_count = 0;
     wire skip_ppu_cycle = (cpu_tick_count == 4) && (ppu_tick == 0);
 
-    reg odd_or_even = 1; // 1 == odd, 0 == even
-
     always @(posedge clk) begin
         if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
             if (~skip_ppu_cycle)
@@ -269,9 +266,9 @@ module tqvp_fjpolo_rv2a03 (
         end
 
         if (~rst_n)
-            apu_odd_or_even <= 1'b1;
+            odd_or_even <= 1'b1;
         else if (cpu_ce) 
-            apu_odd_or_even <= ~apu_odd_or_even;
+            odd_or_even <= ~odd_or_even;
 
         // Realign if the system type changes.
         apu_last_pal <= apu_pal;
@@ -336,7 +333,7 @@ module tqvp_fjpolo_rv2a03 (
         .CS(apu_cs),
         .audio_channels(5'b11111),
         .DmaData(),         // Stubbed input
-        .odd_or_even(apu_odd_or_even),
+        .odd_or_even(odd_or_even),
         .DmaAck(),          // Stubbed input
         .DOUT(apu_dout),
         .Sample(apu_output_sample_16b),
