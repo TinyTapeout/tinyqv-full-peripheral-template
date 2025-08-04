@@ -18,12 +18,12 @@ module LenCounterUnit (
     output logic       lc_on
 );
 
+    (* keep *) logic lc_on_1;
+    (* keep *) logic clear_next;
     always_ff @(posedge clk) begin : lenunit
         logic [7:0] len_counter_int;
         logic halt, halt_next;
         logic [7:0] len_counter_next;
-        logic lc_on_1;
-        logic clear_next;
 
         if (aclk1_d)
             if (~enabled)
@@ -132,7 +132,7 @@ module SquareChan (
     input  logic       LenCtr_Clock,
     input  logic       Env_Clock,
     input  logic       odd_or_even,
-    input  logic       Enabled,
+    (* keep *) input  logic       Enabled,
     output logic [3:0] Sample,
     output logic       IsNonZero
 );
@@ -279,34 +279,13 @@ module TriangleChan (
     input  logic       LenCtr_Clock,
     input  logic       LinCtr_Clock,
     input  logic       Enabled,
-    output logic [3:0] Sample,
+    (* keep *) output logic [3:0] Sample,
     output logic       IsNonZero
 );
 
-(* keep *) reg apu_reg0A_is_ff = 0;
-always @(posedge clk) begin
-    if ((Addr[1:0] == 'h02)&&(DIN[7:0] == 'hFF)) begin
-        apu_reg0A_is_ff <= DIN[7];
-    end
-    if(reset)
-        apu_reg0A_is_ff <= 0;
-end
-(* keep *) reg apu_reg0B_is_aa = 0;
-always @(posedge clk) begin
-    if ((Addr[1:0] == 'h03)&&(DIN[7:0] == 'hAA)) begin
-        apu_reg0B_is_aa <= DIN[7];
-    end
-    if (reset)
-        apu_reg0B_is_aa <= 0;
-end
-
-
-
-
-
-    logic [10:0] Period, applied_period, TimerCtr;
+    (* keep *)logic [10:0] Period, applied_period, TimerCtr;
     initial Period = 'h3E;
-    logic [4:0] SeqPos;
+    (* keep *) logic [4:0] SeqPos;
     logic [6:0] LinCtrPeriod, LinCtrPeriod_1, LinCtr;
     logic LinCtrl, line_reload;
     logic LinCtrZero;
@@ -1092,32 +1071,31 @@ module APU (
     input  logic        odd_or_even,
     input  logic        DmaAck,         // 1 when DMC byte is on DmcData. DmcDmaRequested should go low.
     output logic  [7:0] DOUT,           // Data from APU
-    output wire [15:0] Sample,
+    output wire  [15:0] Sample,
     output logic        DmaReq,         // 1 when DMC wants DMA
     output logic [15:0] DmaAddr,        // Address DMC wants to read
     output logic        IRQ,            // IRQ asserted high == asserted
     // Enhanced APU
     input  logic        apu_enhanced_ce,
     input  logic        apu_mapper_saturates,
-    output logic        o_ce,
-    output logic o_frame_counter
-);
+    output logic        o_ce
+    );
 
-(* keep *) reg apu_reg0A_is_ff = 0;
+(* keep *) reg apu_reg0A_is_3E = 0;
 always @(posedge clk) begin
-    if ((ADDR[4:0] == 'h0A)&&(DIN[7:0] == 'hFF)) begin
-        apu_reg0A_is_ff <= DIN[7];
+    if ((ADDR[4:0] == 'h0A)&&(DIN[7:0] == 'h3E)) begin
+        apu_reg0A_is_3E <= 1'b1;
     end
     if(reset)
-        apu_reg0A_is_ff <= 0;
+        apu_reg0A_is_3E <= 0;
 end
-(* keep *) reg apu_reg0B_is_aa = 0;
+(* keep *) reg apu_reg0B_is_00 = 0;
 always @(posedge clk) begin
-    if ((ADDR[4:0] == 'h0B)&&(DIN[7:0] == 'hAA)) begin
-        apu_reg0B_is_aa <= DIN[7];
+    if ((ADDR[4:0] == 'h0B)&&(DIN[7:0] == 'h00)) begin
+        apu_reg0B_is_00 <= 1'b1;
     end
     if (reset)
-        apu_reg0B_is_aa <= 0;
+        apu_reg0B_is_00 <= 0;
 end
 
 
@@ -1129,7 +1107,7 @@ end
 reg [15:0] sample_reg;
 initial sample_reg = 'h0;
 always_ff @(posedge clk) begin
-        sample_reg <= Sample;
+        sample_reg <= sample_wire;
     if(reset | cold_reset)
         sample_reg <= 0;
 end
@@ -1198,7 +1176,7 @@ assign Sample = sample_reg;
     assign aclk1_delayed = ce & ~odd_or_even;       // Ticks 1 cpu cycle after frame counter
     assign phi1 = ce;
 
-    logic [4:0] Enabled;
+    (* keep *) logic [4:0] Enabled;
     logic [3:0] Sq1Sample,Sq2Sample,TriSample,NoiSample;
     logic [4:0] TriSample_enhanced;
     logic [6:0] DmcSample;
@@ -1378,7 +1356,7 @@ assign Sample = sample_reg;
         .square1      (Sq1Sample),
         .square2      (Sq2Sample),
         .noise        (NoiSample),
-        .triangle     (TriSample),
+        (* keep *) .triangle     (TriSample),
         .dmc          (DmcSample),
         .sample       (sample_wire),
         // Enhanced APU

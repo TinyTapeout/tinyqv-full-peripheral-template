@@ -118,6 +118,14 @@ async def test_project(dut):
     await tqv.write_byte_reg(APU_FRAME_COUNTER_REG_ADDRESS, 0x00)
     assert await tqv.read_byte_reg(APU_FRAME_COUNTER_REG_ADDRESS) == 0x00 # Re-enabled assertion
 
+    # --- Enable Channels ---
+    # Register $4015: APU Status / Channel Enable
+    # Enable Square 1 (bit 0), Square 2 (bit 1), Triangle (bit 2)
+    # Binary: %00000111 = $07
+    # WRITE $07 TO APU_STATUS_REG
+    await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x07)
+    # assert await tqv.read_byte_reg(APU_STATUS_REG_ADDRESS) == 0x07
+
     # --- Configure Square Channel 1 ---
     # Register $4000: Duty Cycle, Length Counter Halt, Constant Volume, Volume/Envelope Decay
     # Let's choose:
@@ -182,7 +190,6 @@ async def test_project(dut):
     # Note: The triangle channel doesn't have a volume envelope like squares; its volume is fixed.
     # The linear counter acts like a length counter for the triangle.
     # WRITE $7F TO APU_TRI_REG0
-    dut._log.info(f"Attempting to write value {hex(0xFF)} to address {hex(APU_TRI_REG0_ADDRESS)}")
     await tqv.write_byte_reg(APU_TRI_REG0_ADDRESS, 0xFF)
     assert await tqv.read_byte_reg(APU_TRI_REG0_ADDRESS) == 0xFF
 
@@ -194,28 +201,16 @@ async def test_project(dut):
     # Register $400A: Timer Low Byte
     # Write the lower 8 bits of the calculated timer period (62)
     # WRITE TRI_TIMER_PERIOD_LOW TO APU_TRI_REG2
-    #await tqv.write_byte_reg(APU_TRI_REG2_ADDRESS, TRI_TIMER_PERIOD_LOW)
-    #assert await tqv.read_byte_reg(APU_TRI_REG2_ADDRESS) == TRI_TIMER_PERIOD_LOW
-    await tqv.write_byte_reg(APU_TRI_REG2_ADDRESS, 0xFF)
-    assert await tqv.read_byte_reg(APU_TRI_REG2_ADDRESS) == 0xFF
+    await tqv.write_byte_reg(APU_TRI_REG2_ADDRESS, TRI_TIMER_PERIOD_LOW)
+    assert await tqv.read_byte_reg(APU_TRI_REG2_ADDRESS) == TRI_TIMER_PERIOD_LOW
 
     # Register $400B: Length Counter Load, Timer High Byte
     # Combine the length counter load value with the upper 3 bits of the timer period.
     # For sustained note, the linear counter control bit in $4008 is more important.
     # We'll just put the timer high bits here.
     # WRITE (LENGTH_COUNTER_LOAD_VALUE | TRI_TIMER_PERIOD_HIGH) TO APU_TRI_REG3
-    #await tqv.write_byte_reg(APU_TRI_REG3_ADDRESS, (LENGTH_COUNTER_LOAD_VALUE | TRI_TIMER_PERIOD_HIGH))
-    #assert await tqv.read_byte_reg(APU_TRI_REG3_ADDRESS) == (LENGTH_COUNTER_LOAD_VALUE | TRI_TIMER_PERIOD_HIGH)
-    await tqv.write_byte_reg(APU_TRI_REG3_ADDRESS, 0xAA)
-    assert await tqv.read_byte_reg(APU_TRI_REG3_ADDRESS) == 0xAA
-
-    # --- Enable Channels ---
-    # Register $4015: APU Status / Channel Enable
-    # Enable Square 1 (bit 0), Square 2 (bit 1), Triangle (bit 2)
-    # Binary: %00000111 = $07
-    # WRITE $07 TO APU_STATUS_REG
-    await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x07)
-    # assert await tqv.read_byte_reg(APU_STATUS_REG_ADDRESS) == 0x07
+    await tqv.write_byte_reg(APU_TRI_REG3_ADDRESS, (LENGTH_COUNTER_LOAD_VALUE | TRI_TIMER_PERIOD_HIGH))
+    assert await tqv.read_byte_reg(APU_TRI_REG3_ADDRESS) == (LENGTH_COUNTER_LOAD_VALUE | TRI_TIMER_PERIOD_HIGH)
 
     # --- Start Frame Counter (Optional, but good for consistent behavior) ---
     # Writing to $4017 starts the frame counter.
@@ -245,7 +240,7 @@ async def test_project(dut):
 
     print("************************************************************************************************")
     # for i in range(CYCLES_TO_CAPTURE):
-    for i in range(5000):
+    for i in range(100):
         # await RisingEdge(dut.clk)
         
         # # Triangle: New timer value

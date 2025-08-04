@@ -154,7 +154,7 @@ module tqvp_fjpolo_rv2a03 (
     // replace the missing pixel. Thus the system runs accurately (ableit a few nanoseconds per frame slower)
     // but all video devices stay happy.
 
-    wire skip_pixel;
+    wire skip_pixel = 1'b0;
     reg freeze_clocks;
     initial freeze_clocks = 0;
     reg [4:0] faux_pixel_cnt;
@@ -294,7 +294,7 @@ module tqvp_fjpolo_rv2a03 (
     /* --- APU Registers Write Logic --- */
     // This block handles writing to the reg_apu array, which mirrors the APU's internal registers.
     integer i;
-    always @(posedge clk or negedge rst_n) begin
+    always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             // Initialize all elements of reg_apu to 0 on reset
             for (i = 0; i <= 30; i = i + 1) begin
@@ -305,7 +305,7 @@ module tqvp_fjpolo_rv2a03 (
             // and the address is within the intended APU register range (0x00 to 0x17)
             if (data_write_n == 2'b00) begin // 2'b00 indicates an 8-bit write
                 if (address >= 6'h00 && address < 6'h20) begin
-                    reg_apu[address] <= data_in[7:0];
+                    reg_apu[address[4:0]] <= data_in[7:0];
                 end
             end
         end
