@@ -1410,17 +1410,16 @@ wire [15:0] ch1_output = {12'b0, square1} + {12'b0, square2};
 // Widen smaller channel outputs to 16 bits for addition
 wire [15:0] tri_normal_output_scaled = {10'b0, triangle << 2};
 wire [15:0] noise_output_scaled = {10'b0, noise_lut[noise]};
-wire [15:0] dmc_output_scaled = {8'b0, 0};
 
 // Sum all channels for the normal linear mixer output
-wire [15:0] sample_normal_linear = ch1_output + tri_normal_output_scaled + noise_output_scaled + dmc_output_scaled;
+wire [15:0] sample_normal_linear = ch1_output + tri_normal_output_scaled + noise_output_scaled;
 
 // Enhanced mixer path (combinatorial linear with enhanced triangle)
 // Use a linear approximation for the enhanced triangle
 wire [15:0] tri_enhanced_output_scaled = {10'b0, apu_triangle_enhanced << 1};
 
 // Sum all channels for the enhanced linear mixer output
-wire [15:0] sample_enhanced_linear = ch1_output + tri_enhanced_output_scaled + noise_output_scaled + dmc_output_scaled;
+wire [15:0] sample_enhanced_linear = ch1_output + tri_enhanced_output_scaled + noise_output_scaled;
 
 // Final sample selection based on apu_enhanced_ce
 // The apu_mapper_saturates signal is no longer used in this simplified linear mixing scheme.
