@@ -29,7 +29,7 @@ APU_SQ2_REG2_ADDRESS = 0x06
 APU_SQ2_REG3_ADDRESS = 0x07
 
 APU_TRI_REG0_ADDRESS = 0x08
-APU_TRI_REG1_ADDRESS = 0x09 # Unused
+APU_TRI_REG1_ADDRESS = 0x09
 APU_TRI_REG2_ADDRESS = 0x0A
 APU_TRI_REG3_ADDRESS = 0x0B
 
@@ -80,8 +80,8 @@ async def capture_samples(tqv, dut, num_cycles):
     """Captures APU output samples for a given number of cycles."""
     samples = []
     # Account for the fact that o_ce toggles and check output only when high
-    for i in range(num_cycles):
-        # Read the sample when the clock enable is high
+    for _ in range(num_cycles):
+        # Wait for the rising edge of o_ce before reading the output sample
         await RisingEdge(dut.o_ce)
         msb_value = await tqv.read_byte_reg(DATA_OUTPUT_MSB_REG_ADDR)
         lsb_value = await tqv.read_byte_reg(DATA_OUTPUT_LSB_REG_ADDR)
@@ -95,41 +95,22 @@ async def capture_samples(tqv, dut, num_cycles):
         samples.append(signed_sample)
     return samples
 
-@cocotb.test()
-async def test_project(dut):
-    dut._log.info("Start")
-    clock = Clock(dut.clk, 100, units="ns")
-    cocotb.start_soon(clock.start())
-    tqv = TinyQV(dut)
-
-    await tqv.reset()
-    await ClockCycles(dut.clk, 10)
-    dut._log.info("Test project behavior")
-    
-    # --- GLOBAL APU RESET ---
-    # This ensures a clean state before any test
-    dut._log.info("Performing a global APU reset before starting tests.")
-    await disable_all_channels(tqv)
-    
-    # Configure the APU to be active
-    await tqv.write_byte_reg(CONFIGURATION0_REG_ADDR, 0x89)
-    await tqv.write_byte_reg(CONFIGURATION1_REG_ADDR, 0x00)
-
-    # You can now proceed with your individual test phases,
-    # starting with a clean slate each time.
-    
-    # --- Test Phase 1: All Channels Simultaneously ---
+# --- New Test Function ---
+async def test_all_channels_simultaneously(tqv, dut):
+    """
+    Test Phase 1: Configures and runs all three channels simultaneously.
+    """
     dut._log.info("--- Test Phase 1: All channels together ---")
 
     # Enable channels: Sq1, Sq2, Tri
-    await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x07) # Enable Sq1, Sq2, Tri
+    await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x07)
     
     await configure_sq1(tqv)
     await configure_sq2(tqv)
     await configure_tri(tqv)
 
-    # Add a short delay to allow the linear counter to stabilize before starting the capture
-    await ClockCycles(dut.clk, 50000) # Wait for 5ms
+    # Add a short delay to allow the linear counter to stabilize
+    await ClockCycles(dut.clk, 50000)
 
     # Capture output and generate plot
     output_samples = []
@@ -155,5 +136,28 @@ async def test_project(dut):
     plt.tight_layout()
     plt.savefig('apu_output_sample.png')
     dut._log.info("Plot saved as apu_output_sample.png")
+
+
+@cocotb.test()
+async def test_project(dut):
+    dut._log.info("Start")
+    clock = Clock(dut.clk, 100, units="ns")
+    cocotb.start_soon(clock.start())
+    tqv = TinyQV(dut)
+
+    await tqv.reset()
+    await ClockCycles(dut.clk, 10)
+    dut._log.info("Test project behavior")
+    
+    # --- GLOBAL APU RESET ---
+    dut._log.info("Performing a global APU reset before starting tests.")
+    await disable_all_channels(tqv)
+    
+    # Configure the APU to be active
+    await tqv.write_byte_reg(CONFIGURATION0_REG_ADDR, 0x89)
+    await tqv.write_byte_reg(CONFIGURATION1_REG_ADDR, 0x00)
+
+    # Call the new test function to run a specific test scenario
+    await test_all_channels_simultaneously(tqv, dut)
 
     dut._log.info("Test finished.")
