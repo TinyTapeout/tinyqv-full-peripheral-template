@@ -606,7 +606,6 @@ module NoiseChan (
     input  logic       cold_reset,
     input  logic [1:0] Addr,
     input  logic [7:0] DIN,
-    input  logic       PAL,
     input  logic       write,
     input  logic [7:0] lc_load,
     input  logic       LenCtr_Clock,
@@ -655,26 +654,6 @@ module NoiseChan (
         .envelope       (Envelope)
     );
 
-    reg [10:0] noise_pal_lut[0:15];
-    initial begin
-        noise_pal_lut[0] = 11'h200;
-        noise_pal_lut[1] = 11'h280;
-        noise_pal_lut[2] = 11'h550;
-        noise_pal_lut[3] = 11'h5D5;
-        noise_pal_lut[4] = 11'h393;
-        noise_pal_lut[5] = 11'h74F;
-        noise_pal_lut[6] = 11'h61B;
-        noise_pal_lut[7] = 11'h41F;
-        noise_pal_lut[8] = 11'h661;
-        noise_pal_lut[9] = 11'h1C5;
-        noise_pal_lut[10] = 11'h6AE;
-        noise_pal_lut[11] = 11'h093;
-        noise_pal_lut[12] = 11'h4FE;
-        noise_pal_lut[13] = 11'h12D;
-        noise_pal_lut[14] = 11'h679;
-        noise_pal_lut[15] = 11'h392;
-    end
-
     // Values read directly from the netlist
     reg [10:0] noise_ntsc_lut[0:15];
     initial begin
@@ -704,7 +683,7 @@ module NoiseChan (
 
             if (noise_clock) begin
                 noise_clock <= 0;
-                noise_timer <= PAL ? noise_pal_lut[Period] : noise_ntsc_lut[Period];
+                noise_timer <= noise_ntsc_lut[Period];
                 Shift <= {Shift[13:0], ((Shift[14] ^ (ShortMode ? Shift[8] : Shift[13])) | ~|Shift)};
             end
         end
@@ -720,7 +699,7 @@ module NoiseChan (
         end
 
         if (reset) begin
-            if (|noise_timer) noise_timer <= (PAL ? noise_pal_lut[0] : noise_ntsc_lut[0]);
+            if (|noise_timer) noise_timer <= noise_ntsc_lut[0];
             ShortMode <= 0;
             Shift <= 0;
             Period <= 0;
@@ -743,7 +722,6 @@ module DmcChan (
     input  logic        write,
     input  logic        dma_ack,      // 1 when DMC byte is on DmcData. DmcDmaRequested should go low.
     input  logic  [7:0] dma_data,     // Input data to DMC from memory.
-    input  logic        PAL,
     output logic [15:0] dma_address,     // Address DMC wants to read
     output logic        irq,
     output logic  [6:0] Sample,
@@ -765,26 +743,6 @@ module DmcChan (
     logic [7:0] sample_shift;
     logic [2:0] dmc_bits; // Simply an 8 cycle counter.
     logic enable_1, enable_2, enable_3;
-
-    reg [8:0] pal_pitch_lut[0:15];
-    initial begin
-        pal_pitch_lut[0] = 9'h1D7;
-        pal_pitch_lut[1] = 9'h067;
-        pal_pitch_lut[2] = 9'h0D9;
-        pal_pitch_lut[3] = 9'h143;
-        pal_pitch_lut[4] = 9'h1E1;
-        pal_pitch_lut[5] = 9'h07B;
-        pal_pitch_lut[6] = 9'h05C;
-        pal_pitch_lut[7] = 9'h132;
-        pal_pitch_lut[8] = 9'h04A;
-        pal_pitch_lut[9] = 9'h1A3;
-        pal_pitch_lut[10] = 9'h1CF;
-        pal_pitch_lut[11] = 9'h1CD;
-        pal_pitch_lut[12] = 9'h02A;
-        pal_pitch_lut[13] = 9'h11C;
-        pal_pitch_lut[14] = 9'h11B;
-        pal_pitch_lut[15] = 9'h157;
-    end
 
     reg [8:0] ntsc_pitch_lut[0:15];
     initial begin
@@ -850,7 +808,7 @@ module DmcChan (
 
             if (dmc_clock) begin
                 dmc_clock <= 0;
-                dmc_lsfr <= PAL ? pal_pitch_lut[frequency] : ntsc_pitch_lut[frequency];
+                dmc_lsfr <= ntsc_pitch_lut[frequency];
                 sample_shift <= {1'b0, sample_shift[7:1]};
                 dmc_bits <= dmc_bits + 1'd1;
 
@@ -908,7 +866,7 @@ module DmcChan (
             dmc_volume <= {7'h0, dmc_volume[0]};
             dmc_volume_next <= {7'h0, dmc_volume[0]};
             sample_shift <= 8'h0;
-            if (|dmc_lsfr) dmc_lsfr <= (PAL ? pal_pitch_lut[0] : ntsc_pitch_lut[0]);
+            if (|dmc_lsfr) dmc_lsfr <= ntsc_pitch_lut[0];
             bytes_remaining <= 0;
             dmc_bits <= 0;
             sample_buffer <= 0;
@@ -946,7 +904,6 @@ module FrameCtr (
     input  logic write_ce,
     input  logic [7:0] din,
     input  logic [1:0] addr,
-    input  logic PAL,
     input  logic MMC5,
     output logic irq,
     output logic irq_flag,
@@ -961,14 +918,6 @@ module FrameCtr (
     // 15'b010_1100_1101_0011,    11475    11170 -- 3 quarter
     // 15'b000_1010_0001_1111,    02591    14899 -- Reset w/o Seq/Interrupt
     // 15'b111_0001_1000_0101     29061    18625 -- Reset w/ seq
-
-    // PAL -- Speculative
-    // Binary Frame Value         Decimal  Cycle
-    // 15'b001_1111_1010_0100     08100    04156
-    // 15'b100_0100_0011_0000     17456    08313
-    // 15'b101_1000_0001_0101     22549    12469
-    // 15'b000_1011_1110_1000     03048    16625
-    // 15'b000_0100_1111_1010     01274    20782
 
     logic frame_reset;
     logic frame_interrupt_buffer;
@@ -988,19 +937,17 @@ module FrameCtr (
     assign irq = FrameInterrupt && ~DisableFrameInterrupt;
     assign irq_flag = frame_interrupt_buffer;
 
-    // This is implemented from the original LSFR frame counter logic taken from the 2A03 netlists. The
-    // PAL LFSR numbers are educated guesses based on existing observed cycle numbers, but they may not
-    // be perfectly correct.
+    // This is implemented from the original LSFR frame counter logic taken from the 2A03 netlists.
 
     logic seq_mode;
     assign seq_mode = aclk1 ? FrameSeqMode : FrameSeqMode_2;
 
     logic frm_a, frm_b, frm_c, frm_d, frm_e;
-    assign frm_a = (PAL ? 15'b001_1111_1010_0100 : 15'b001_0000_0110_0001) == frame;
-    assign frm_b = (PAL ? 15'b100_0100_0011_0000 : 15'b011_0110_0000_0011) == frame;
-    assign frm_c = (PAL ? 15'b101_1000_0001_0101 : 15'b010_1100_1101_0011) == frame;
-    assign frm_d = (PAL ? 15'b000_1011_1110_1000 : 15'b000_1010_0001_1111) == frame && ~seq_mode;
-    assign frm_e = (PAL ? 15'b000_0100_1111_1010 : 15'b111_0001_1000_0101) == frame;
+    assign frm_a = 15'b001_0000_0110_0001 == frame;
+    assign frm_b = 15'b011_0110_0000_0011 == frame;
+    assign frm_c = 15'b010_1100_1101_0011 == frame;
+    assign frm_d = 15'b000_1010_0001_1111 == frame && ~seq_mode;
+    assign frm_e = 15'b111_0001_1000_0101 == frame;
 
     assign set_irq = frm_d & ~FrameSeqMode;
     assign frame_reset = frm_d | frm_e | w4017_2;
@@ -1059,7 +1006,6 @@ module APU (
     input  logic        reset,
     input  logic        cold_reset,
     input  logic        allow_us,       // Set to 1 to allow ultrasonic frequencies
-    input  logic        PAL,
     input  logic  [4:0] ADDR,           // APU Address Line
     input  logic  [7:0] DIN,            // Data to APU
     input  logic        RW,
@@ -1287,7 +1233,6 @@ module APU (
         .cold_reset   (cold_reset),
         .Addr         (ADDR[1:0]),
         .DIN          (DIN),
-        .PAL          (PAL),
         .write        (ApuMW3 && write),
         .lc_load      (lc_load),
         .LenCtr_Clock (ClkL),
@@ -1309,7 +1254,6 @@ module APU (
         .write       (write & ApuMW4),
         .dma_ack     (DmaAck),
         .dma_data    (DmaData),
-        .PAL         (PAL),
         .dma_address (DmaAddr),
         .irq         (DmcIrq),
         .Sample      (DmcSample),
@@ -1341,7 +1285,6 @@ module APU (
         .write_ce     (ApuMW5 & write_ce),
         .addr         (ADDR[1:0]),
         .din          (DIN),
-        .PAL          (PAL),
         .MMC5         (MMC5),
         .irq          (frame_irq),
         .irq_flag     (irq_flag),
