@@ -1079,39 +1079,6 @@ module APU (
     output logic        o_ce
     );
 
-reg apu_reg0A_is_3E = 0;
-always @(posedge clk) begin
-    if ((ADDR[4:0] == 'h0A)&&(DIN[7:0] == 'h3E)) begin
-        apu_reg0A_is_3E <= 1'b1;
-    end
-    if(reset)
-        apu_reg0A_is_3E <= 0;
-end
-reg apu_reg0B_is_00 = 0;
-always @(posedge clk) begin
-    if ((ADDR[4:0] == 'h0B)&&(DIN[7:0] == 'h00)) begin
-        apu_reg0B_is_00 <= 1'b1;
-    end
-    if (reset)
-        apu_reg0B_is_00 <= 0;
-end
-
-
-
-
-
-
-
-reg [15:0] sample_reg;
-initial sample_reg = 'h0;
-always_ff @(posedge clk) begin
-        sample_reg <= sample_wire;
-    if(reset | cold_reset)
-        sample_reg <= 0;
-end
-wire [15:0] sample_wire;
-assign Sample = sample_reg;
-
     reg [7:0] len_counter_lut[0:31];
 
     initial begin
@@ -1356,7 +1323,7 @@ assign Sample = sample_reg;
         .noise        (NoiSample),
         .triangle     (TriSample),
         .dmc          (DmcSample),
-        .sample       (sample_wire),
+        .sample       (Sample),
         // Enhanced APU
         .apu_enhanced_ce(apu_enhanced_ce),
         .apu_triangle_enhanced(TriSample_enhanced),
