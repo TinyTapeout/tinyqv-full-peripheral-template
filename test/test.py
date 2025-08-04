@@ -81,8 +81,6 @@ async def capture_samples(tqv, dut, num_cycles):
     samples = []
     # I remember you requested that the testbench should account for o_ce
     for _ in range(num_cycles):
-        # Wait for the rising edge of o_ce before reading the output sample
-        await RisingEdge(dut.o_ce)
         msb_value = await tqv.read_byte_reg(DATA_OUTPUT_MSB_REG_ADDR)
         lsb_value = await tqv.read_byte_reg(DATA_OUTPUT_LSB_REG_ADDR)
         combined_sample = (msb_value << 8) | lsb_value
@@ -124,8 +122,6 @@ async def test_all_channels_simultaneously(tqv, dut):
         else:
             signed_sample = combined_sample
         output_samples.append(signed_sample)
-        # Wait for the next o_ce rising edge
-        await RisingEdge(dut.o_ce)
     
     timestamps = np.arange(NUM_CYCLES_TO_CAPTURE) * 100e-9
     plt.figure(figsize=(12, 6))
@@ -172,8 +168,6 @@ async def test_all_channels_simultaneously_enhanced(tqv, dut):
         else:
             signed_sample = combined_sample
         output_samples.append(signed_sample)
-        # Wait for the next o_ce rising edge
-        await RisingEdge(dut.o_ce)
     
     timestamps = np.arange(NUM_CYCLES_TO_CAPTURE) * 100e-9
     plt.figure(figsize=(12, 6))

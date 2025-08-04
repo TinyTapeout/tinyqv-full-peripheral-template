@@ -2131,34 +2131,28 @@ initial begin
     mix_lut[511] = 16'h0000;
 end
 
-// Square waves
-wire [4:0] squares = square1 + square2;
-wire [15:0] ch1 = pulse_lut[squares];
+// Square waves: Sum of pulse1 and pulse2, then lookup in pulse_lut
+wire [4:0] squares_sum = square1 + square2;
+wire [15:0] ch1_output = pulse_lut[squares_sum];
 
-// Normal mixer
-wire [8:0] mix_normal = 9'(tri_lut[triangle]) + 9'(noise_lut[noise]) + 9'(dmc_lut[dmc]);
-wire [15:0] ch2 = mix_lut[mix_normal];
-wire [15:0] sample_normal = ch1 + ch2;
+// Normal mixer path (now combinatorial linear)
+// Widen smaller channel outputs to 16 bits for addition
+wire [15:0] tri_normal_output_scaled = {10'b0, tri_lut[triangle]};
+wire [15:0] noise_output_scaled = {10'b0, noise_lut[noise]};
+wire [15:0] dmc_output_scaled = {8'b0, dmc_lut[dmc]};
 
-// Combinatorial linear mixer + enhanced triangle wave
-wire [15:0] tri_enhanced_out = tri_lut_enhanced_5b[apu_triangle_enhanced];
-wire [15:0] noise_out = 8'd0 + noise_lut[noise]; // Widen to 16 bits for addition
-wire [15:0] dmc_out = 8'd0 + dmc_lut[dmc];     // Widen to 16 bits for addition
+// Sum all channels for the normal linear mixer output
+wire [15:0] sample_normal_linear = ch1_output + tri_normal_output_scaled + noise_output_scaled + dmc_output_scaled;
 
-// The new linear mixer is a direct combinatorial sum
-wire [15:0] mixed_channels_enhanced_linear = tri_enhanced_out + noise_out + dmc_out;
-wire [15:0] ch2_enhanced_linear = mixed_channels_enhanced_linear;
+// Enhanced mixer path (combinatorial linear with enhanced triangle)
+// Use the enhanced triangle lookup table
+wire [15:0] tri_enhanced_output_scaled = {10'b0, tri_lut_enhanced_5b[apu_triangle_enhanced]};
 
-// Re-assign sample_linear to use the new linear mixer result
-wire [15:0] sample_linear = ch1 + ch2_enhanced_linear;
+// Sum all channels for the enhanced linear mixer output
+wire [15:0] sample_enhanced_linear = ch1_output + tri_enhanced_output_scaled + noise_output_scaled + dmc_output_scaled;
 
-// Normal mixer + enhanced triangle wave
-wire [8:0] mix_enhanced_normal_lut = 9'((tri_lut_enhanced_5b[apu_triangle_enhanced])) + 9'(noise_lut[noise]) + 9'(dmc_lut[dmc]);
-wire [15:0] ch2_mix_normal_enhanced_tri = mix_lut[mix_enhanced_normal_lut];
-wire [15:0] sample_mix_normal_enhanced_tri = ch1 + ch2_mix_normal_enhanced_tri;
-
-assign sample = !apu_enhanced_ce ? sample_normal : 
-                !apu_mapper_saturates ? sample_linear :
-                sample_mix_normal_enhanced_tri;
+// Final sample selection based on apu_enhanced_ce
+// The apu_mapper_saturates signal is no longer used in this simplified linear mixing scheme.
+assign sample = apu_enhanced_ce ? sample_enhanced_linear : sample_normal_linear;
 
 endmodule
