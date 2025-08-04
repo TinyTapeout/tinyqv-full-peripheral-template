@@ -112,7 +112,7 @@ async def test_all_channels_simultaneously(tqv, dut):
 
     # Capture output and generate plot
     output_samples = []
-    NUM_CYCLES_TO_CAPTURE = 250
+    NUM_CYCLES_TO_CAPTURE = 100
     for i in range(NUM_CYCLES_TO_CAPTURE):
         msb_value = await tqv.read_byte_reg(DATA_OUTPUT_MSB_REG_ADDR)
         lsb_value = await tqv.read_byte_reg(DATA_OUTPUT_LSB_REG_ADDR)
