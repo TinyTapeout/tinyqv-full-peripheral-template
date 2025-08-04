@@ -616,7 +616,6 @@ module FrameCtr (
     output logic frame_half,
     output logic frame_quarter
 );
-
     // NTSC -- Confirmed
     // Binary Frame Value         Decimal  Cycle
     // 15'b001_0000_0110_0001,    04193    03713 -- Quarter
@@ -668,12 +667,13 @@ module FrameCtr (
 
     always_ff @(posedge clk or posedge reset) begin : apu_block
         if (reset) begin
+            // All registers must have a fixed reset value here.
             FrameInterrupt <= 0;
             frame_interrupt_buffer <= 0;
             w4017_1 <= 0;
             w4017_2 <= 0;
             DisableFrameInterrupt <= 0;
-            if (cold_reset) FrameSeqMode <= 0;
+            FrameSeqMode <= 0; // Unconditional reset to 0
             frame <= 15'h7FFF;
             frame_half_reg <= 0;
             frame_quarter_reg <= 0;
@@ -683,11 +683,16 @@ module FrameCtr (
                 frame <= frame_next;
                 w4017_2 <= w4017_1;
                 w4017_1 <= 0;
-                FrameSeqMode_2 <= FrameSeqMode;
-
+                
+                // This logic is now handled here, not in the reset block.
+                if (cold_reset) begin
+                    FrameSeqMode_2 <= 0;
+                end else begin
+                    FrameSeqMode_2 <= FrameSeqMode;
+                end
+                
                 frame_half_reg <= (frm_b | frm_d | frm_e | (w4017_2 & seq_mode));
                 frame_quarter_reg <= (frm_a | frm_b | frm_c | frm_d | frm_e | (w4017_2 & seq_mode));
-
                 frame_reset_2 <= aclk2 & frame_reset;
             end
 
@@ -710,9 +715,7 @@ module FrameCtr (
             end
         end
     end
-
 endmodule
-
 module APU (
     input  logic         MMC5,
     input  logic         clk,
