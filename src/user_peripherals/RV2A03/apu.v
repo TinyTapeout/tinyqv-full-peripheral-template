@@ -704,26 +704,27 @@ module FrameCtr (
 
 endmodule
 module APU (
-    input  logic        MMC5,
-    input  logic        clk,
-    input  logic        PHI2,
-    input  logic        ce,
-    input  logic        reset,
-    input  logic        cold_reset,
-    input  logic        allow_us,       // Set to 1 to allow ultrasonic frequencies
-    input  logic  [4:0] ADDR,           // APU Address Line
-    input  logic  [7:0] DIN,            // Data to APU
-    input  logic        RW,
-    input  logic        CS,
-    input  logic  [4:0] audio_channels, // Enabled audio channels
-    input  logic  [7:0] DmaData,        // Input data to DMC from memory.
-    input  logic        odd_or_even,
-    input  logic        DmaAck,         // 1 when DMC byte is on DmcData. DmcDmaRequested should go low.
-    output logic  [7:0] DOUT,           // Data from APU
-    output wire  [15:0] Sample,
-    output logic        DmaReq,         // 1 when DMC wants DMA
-    output logic [15:0] DmaAddr,        // Address DMC wants to read
-    output logic        IRQ             // IRQ asserted high == asserted
+    input  logic         MMC5,
+    input  logic         clk,
+    input  logic         PHI2,      // Now used as a clock enable.
+    input  logic         ce,
+    input  logic         reset,
+    input  logic         cold_reset,
+    input  logic         allow_us,       // Set to 1 to allow ultrasonic frequencies
+    input  logic  [4:0]  ADDR,           // APU Address Line
+    input  logic  [7:0]  DIN,            // Data to APU
+    input  logic         RW,
+    input  logic         CS,
+    input  logic  [4:0]  audio_channels, // Enabled audio channels
+    input  logic  [7:0]  DmaData,        // Input data to DMC from memory.
+    input  logic         odd_or_even,
+    input  logic         DmaAck,         // 1 when DMC byte is on DmcData. DmcDmaRequested should go low.
+    output logic  [7:0]  DOUT,           // Data from APU
+    output wire   [15:0] Sample,
+    output logic         DmaReq,         // 1 when DMC wants DMA
+    output logic  [15:0] DmaAddr,        // Address DMC wants to read
+    output logic         IRQ,            // IRQ asserted high == asserted
+    output logic         o_ce
     );
 
     reg [7:0] len_counter_lut[0:31];
@@ -766,26 +767,24 @@ module APU (
     logic [7:0] lc_load;
     assign lc_load = len_counter_lut[DIN[7:3]];
 
-    // APU reads and writes happen at Phi2 of the 6502 core. Note: Not M2.
-    logic read, read_old;
-    logic write, write_ce, write_old;
-    logic phi2_old, phi2_ce;
+    // All clocking is now handled via a single clock enable signal.
+    // The PHI2 signal from the top-level is now a clock enable.
+    logic read, write, write_ce;
+    logic apu_ce_sync; // Synchronize the PHI2 enable signal
+
+    always @(posedge clk) begin
+        apu_ce_sync <= PHI2;
+    end
 
     assign read = RW & CS;
     assign write = ~RW & CS;
-    assign phi2_ce = PHI2 & ~phi2_old;
-    assign write_ce = write & phi2_ce;
+    assign write_ce = write & apu_ce_sync;
 
-    // The APU has four primary clocking events that take place:
-    // aclk1    -- Aligned with CPU phi1, but every other cpu tick. This drives the majority of the APU
-    // aclk1_d  -- Aclk1, except delayed by 1 cpu cycle exactly. Drives he half/quarter signals and len counter
-    // aclk2    -- Aligned with CPU phi2, also every other frame
-    // write    -- Happens on CPU phi2 (Not M2!). Most of these are latched by one of the above clocks.
-    logic aclk1, aclk2, aclk1_delayed, phi1; /* synthesis syn_keep=1 */ 
-    // assign aclk1 = (ce)&(odd_or_even);              // Defined as the cpu tick when the frame counter increases
-    assign aclk1 = (odd_or_even);              // Defined as the cpu tick when the frame counter increases
-    assign aclk2 = phi2_ce & ~odd_or_even;          // Tick on odd cycles, not 50% duty cycle so it covers 2 cpu cycles
-    assign aclk1_delayed = ce & ~odd_or_even;       // Ticks 1 cpu cycle after frame counter
+    // Derived clock signals are replaced with a clock enable.
+    logic aclk1, aclk2, aclk1_delayed, phi1;
+    assign aclk1 = odd_or_even;
+    assign aclk2 = ~odd_or_even & apu_ce_sync;
+    assign aclk1_delayed = ~odd_or_even & ce;
     assign phi1 = ce;
 
     logic [4:0] Enabled;
@@ -808,147 +807,143 @@ module APU (
     assign ApuMW5 = ADDR[4:2]==5; // Control registers
 
     logic Sq1NonZero, Sq2NonZero, TriNonZero, TriNonZero_enhanced, NoiNonZero;
-    logic ClkE, ClkL; /* synthesis syn_keep=1 */
+    logic ClkE, ClkL;
+    
+    // The internal clock enables are now derived from the frame counter.
+    logic frame_quarter, frame_half;
+    assign ClkE = frame_quarter & aclk1_delayed;
+    assign ClkL = frame_half & aclk1_delayed;
 
-    logic [4:0] enabled_buffer, enabled_buffer_1;
-    assign Enabled = aclk1 ? enabled_buffer : enabled_buffer_1;
+    // Use a single synchronous assignment for enabled_buffer.
+    logic [4:0] enabled_buffer;
 
-    always_ff @(posedge clk) begin
-        phi2_old <= PHI2;
-
-        if (aclk1) begin
-            enabled_buffer_1 <= enabled_buffer;
-        end
-
-        if (ApuMW5 && write && ADDR[1:0] == 1) begin
-            enabled_buffer <= DIN[4:0]; // Register $4015
-        end
-
+    always_ff @(posedge clk or posedge reset) begin
         if (reset) begin
             enabled_buffer <= 0;
-            enabled_buffer_1 <= 0;
+        end else if (apu_ce_sync && ApuMW5 && write && ADDR[1:0] == 1) begin
+            enabled_buffer <= DIN[4:0]; // Register $4015
         end
     end
+    assign Enabled = enabled_buffer;
 
-    logic frame_quarter, frame_half; /* synthesis syn_keep=1 */
-    assign ClkE = ((frame_quarter)&(aclk1_delayed));
-    assign ClkL = ((frame_half)&(aclk1_delayed));
 
     // Generate bus output
     assign DOUT = {DmcIrq, irq_flag, 1'b0, IsDmcActive, NoiNonZero, TriNonZero, Sq2NonZero, Sq1NonZero};
-
     assign IRQ = frame_irq || DmcIrq;
 
     // Generate each channel
     SquareChan Squ1 (
-        .MMC5         (MMC5),
-        .clk          (clk),
-        .ce           (ce),
-        .aclk1        (aclk1),
-        .aclk1_d      (aclk1_delayed),
-        .reset        (reset),
-        .cold_reset   (cold_reset),
-        .allow_us     (allow_us),
-        .sq2          (1'b0),
-        .Addr         (ADDR[1:0]),
-        .DIN          (DIN),
-        .write        (ApuMW0 && write),
-        .lc_load      (lc_load),
-        .LenCtr_Clock (ClkL),
-        .Env_Clock    (ClkE),
-        .odd_or_even  (odd_or_even),
-        .Enabled      (Enabled[0]),
-        .Sample       (Sq1Sample),
-        .IsNonZero    (Sq1NonZero)
+        .MMC5           (MMC5),
+        .clk            (clk),
+        .ce             (apu_ce_sync), // Use the new clock enable
+        .aclk1          (aclk1),
+        .aclk1_d        (aclk1_delayed),
+        .reset          (reset),
+        .cold_reset     (cold_reset),
+        .allow_us       (allow_us),
+        .sq2            (1'b0),
+        .Addr           (ADDR[1:0]),
+        .DIN            (DIN),
+        .write          (ApuMW0 && write),
+        .lc_load        (lc_load),
+        .LenCtr_Clock   (ClkL),
+        .Env_Clock      (ClkE),
+        .odd_or_even    (odd_or_even),
+        .Enabled        (Enabled[0]),
+        .Sample         (Sq1Sample),
+        .IsNonZero      (Sq1NonZero)
     );
 
     SquareChan Squ2 (
-        .MMC5         (MMC5),
-        .clk          (clk),
-        .ce           (ce),
-        .aclk1        (aclk1),
-        .aclk1_d      (aclk1_delayed),
-        .reset        (reset),
-        .cold_reset   (cold_reset),
-        .allow_us     (allow_us),       // nand2mario
-        .sq2          (1'b1),
-        .Addr         (ADDR[1:0]),
-        .DIN          (DIN),
-        .write        (ApuMW1 && write),
-        .lc_load      (lc_load),
-        .LenCtr_Clock (ClkL),
-        .Env_Clock    (ClkE),
-        .odd_or_even  (odd_or_even),
-        .Enabled      (Enabled[1]),
-        .Sample       (Sq2Sample),
-        .IsNonZero    (Sq2NonZero)
+        .MMC5           (MMC5),
+        .clk            (clk),
+        .ce             (apu_ce_sync), // Use the new clock enable
+        .aclk1          (aclk1),
+        .aclk1_d        (aclk1_delayed),
+        .reset          (reset),
+        .cold_reset     (cold_reset),
+        .allow_us       (allow_us),
+        .sq2            (1'b1),
+        .Addr           (ADDR[1:0]),
+        .DIN            (DIN),
+        .write          (ApuMW1 && write),
+        .lc_load        (lc_load),
+        .LenCtr_Clock   (ClkL),
+        .Env_Clock      (ClkE),
+        .odd_or_even    (odd_or_even),
+        .Enabled        (Enabled[1]),
+        .Sample         (Sq2Sample),
+        .IsNonZero      (Sq2NonZero)
     );
 
     TriangleChan Tri (
-        .clk          (clk),
-        .phi1         (phi1),
-        .aclk1        (aclk1),
-        .aclk1_d      (aclk1_delayed),
-        .reset        (reset),
-        .cold_reset   (cold_reset),
-        .allow_us     (allow_us),
-        .Addr         (ADDR[1:0]),
-        .DIN          (DIN),
-        .write        ((ApuMW2)&&(write)),
-        .lc_load      (lc_load),
-        .LenCtr_Clock (ClkE),
-        .LinCtr_Clock (ClkL),
-        .Enabled      (Enabled[2]),
-        .Sample       (TriSample),
-        .IsNonZero    (TriNonZero)
+        .clk            (clk),
+        .phi1           (phi1),
+        .aclk1          (aclk1),
+        .aclk1_d        (aclk1_delayed),
+        .reset          (reset),
+        .cold_reset     (cold_reset),
+        .allow_us       (allow_us),
+        .Addr           (ADDR[1:0]),
+        .DIN            (DIN),
+        .write          ((ApuMW2)&&(write)),
+        .lc_load        (lc_load),
+        .LenCtr_Clock   (ClkE),
+        .LinCtr_Clock   (ClkL),
+        .Enabled        (Enabled[2]),
+        .Sample         (TriSample),
+        .IsNonZero      (TriNonZero)
     );
 
     NoiseChan Noi (
-        .clk          (clk),
-        .ce           (ce),
-        .aclk1        (aclk1),
-        .aclk1_d      (aclk1_delayed),
-        .reset        (reset),
-        .cold_reset   (cold_reset),
-        .Addr         (ADDR[1:0]),
-        .DIN          (DIN),
-        .write        (ApuMW3 && write),
-        .lc_load      (lc_load),
-        .LenCtr_Clock (ClkL),
-        .Env_Clock    (ClkE),
-        .Enabled      (Enabled[3]),
-        .Sample       (NoiSample),
-        .IsNonZero    (NoiNonZero)
+        .clk            (clk),
+        .ce             (apu_ce_sync), // Use the new clock enable
+        .aclk1          (aclk1),
+        .aclk1_d        (aclk1_delayed),
+        .reset          (reset),
+        .cold_reset     (cold_reset),
+        .Addr           (ADDR[1:0]),
+        .DIN            (DIN),
+        .write          (ApuMW3 && write),
+        .lc_load        (lc_load),
+        .LenCtr_Clock   (ClkL),
+        .Env_Clock      (ClkE),
+        .Enabled        (Enabled[3]),
+        .Sample         (NoiSample),
+        .IsNonZero      (NoiNonZero)
     );
 
     APUMixer mixer (
-        .square1      (Sq1Sample),
-        .square2      (Sq2Sample),
-        .noise        (NoiSample),
-        .triangle     (TriSample),
-        .dmc          (DmcSample),
-        .sample       (Sample)
+        .square1        (Sq1Sample),
+        .square2        (Sq2Sample),
+        .noise          (NoiSample),
+        .triangle       (TriSample),
+        .dmc            (DmcSample),
+        .sample         (Sample)
     );
 
     FrameCtr frame_counter (
-        .clk          (clk),
-        .aclk1        (aclk1),
-        .aclk2        (aclk2),
-        .reset        (reset),
-        .cold_reset   (cold_reset),
-        .write        (ApuMW5 & write),
-        .read         (ApuMW5 & read),
-        .write_ce     (ApuMW5 & write_ce),
-        .addr         (ADDR[1:0]),
-        .din          (DIN),
-        .MMC5         (MMC5),
-        .irq          (frame_irq),
-        .irq_flag     (irq_flag),
-        .frame_half   (frame_half),
-        .frame_quarter(frame_quarter)
+        .clk            (clk),
+        .aclk1          (aclk1),
+        .aclk2          (aclk2),
+        .reset          (reset),
+        .cold_reset     (cold_reset),
+        .write          (ApuMW5 & write),
+        .read           (ApuMW5 & read),
+        .write_ce       (ApuMW5 & write_ce),
+        .addr           (ADDR[1:0]),
+        .din            (DIN),
+        .MMC5           (MMC5),
+        .irq            (frame_irq),
+        .irq_flag       (irq_flag),
+        .frame_half     (frame_half),
+        .frame_quarter  (frame_quarter)
     );
 
+    // This is the new output clock enable signal.
+    assign o_ce = apu_ce_sync;
 endmodule
+
 
 // http://wiki.nesdev.com/w/index.php/APU_Mixer
 // I generated three LUT's for each mix channel entry and one lut for the squares, then a
