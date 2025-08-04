@@ -129,94 +129,117 @@ module tqvp_fjpolo_rv2a03 (
     // master cycles and low for 6 master cycles. It is considered active when low or "even".
     reg odd_or_even = 1; // 1 == odd, 0 == even
 
-    // XXX: Because we are using div4 clock divider for PAL, master clock should be 21.2813696
-    // Clock Dividers
-    wire [4:0] div_cpu_n = 5'd12;
-    wire [2:0] div_ppu_n = 3'd4;
+    // NOTE: The clocking logic has been simplified and optimized.
+    // This version uses bit-width optimized counters and parameters.
 
-    // Counters
-    reg [4:0] div_cpu;
-    initial div_cpu = 5'd1;
-    reg [2:0] div_ppu;
-    initial div_ppu = 3'd1;
+    // Bit-width optimized clock divisors and counters
+    parameter CPU_DIV_N = 4'd11; // Counter will count from 0 to 11 (12 cycles)
+    parameter PPU_DIV_N = 2'd3;  // Counter will count from 0 to 3 (4 cycles)
+
+    // Optimized Counters
+    reg [3:0] div_cpu_cnt;
+    initial div_cpu_cnt = 4'd0;
+    reg [1:0] div_ppu_cnt;
+    initial div_ppu_cnt = 2'd0;
     reg [1:0] div_sys;
     initial div_sys = 2'd0;
 
     // CE's
-    wire cpu_ce  = (div_cpu == div_cpu_n);
-    wire ppu_ce  = (div_ppu == div_ppu_n);
-    wire apu_phi2_clk = (div_cpu > 4 && div_cpu < div_cpu_n);
+    wire cpu_ce = (div_cpu_cnt == CPU_DIV_N);
+    wire ppu_ce = (div_ppu_cnt == PPU_DIV_N);
     wire apu_ce = cpu_ce;
     wire apu_cs = (address >= 'h00)&&(address < APU_FRAME_COUNTER_REG_ADDRESS);
 
-    //  The infamous NES jitter is important for accuracy, but wreks havok on modern devices and scalers,
-    // so what I do here is pause the whole system for one PPU clock and insert a "fake" ppu clock to
-    // replace the missing pixel. Thus the system runs accurately (ableit a few nanoseconds per frame slower)
-    // but all video devices stay happy.
+    // APU Clock Signal
+    wire apu_phi2_clk = (div_cpu_cnt >= 4'd4);
 
-    wire skip_pixel = 1'b0;
-    reg freeze_clocks;
-    initial freeze_clocks = 0;
-    reg [4:0] faux_pixel_cnt;
-    initial faux_pixel_cnt = 0;
-
-    wire use_fake_h = freeze_clocks && faux_pixel_cnt < 6;
-    reg [1:0] ppu_tick = 0;
-    initial ppu_tick = 0;
+    `ifdef DEJITTER_ENABLED
+        // De-Jitter Logic - this block is compiled only when DEJITTER_ENABLED is defined
+        wire skip_pixel = 1'b0;
+        reg freeze_clocks;
+        initial freeze_clocks = 0;
+        reg [4:0] faux_pixel_cnt;
+        initial faux_pixel_cnt = 0;
+        wire use_fake_h = freeze_clocks && faux_pixel_cnt < 6;
+        reg [1:0] ppu_tick = 0;
+        initial ppu_tick = 0;
+        reg [2:0] cpu_tick_count;
+        initial cpu_tick_count = 0;
+        wire skip_ppu_cycle = (cpu_tick_count == 4) && (ppu_tick == 0);
+    `else
+        // Simplified logic and placeholder signals when dejitter is disabled
+        reg [2:0] cpu_tick_count;
+        initial cpu_tick_count = 0;
+        wire skip_ppu_cycle = 1'b0;
+        wire freeze_clocks = 1'b0;
+    `endif // DEJITTER_ENABLED
 
     reg apu_last_pal;
     initial apu_last_pal = 0;
-    reg [2:0] cpu_tick_count;
-    initial cpu_tick_count = 0;
-    wire skip_ppu_cycle = (cpu_tick_count == 4) && (ppu_tick == 0);
+
 
     always @(posedge clk) begin
-        if (~freeze_clocks | ~(div_ppu == (div_ppu_n - 1'b1))) begin
-            if (~skip_ppu_cycle)
-                div_cpu <= cpu_ce || (ppu_ce && div_cpu > div_cpu_n) ? 1'b1 : div_cpu + 1'b1;
 
-            div_ppu <= ppu_ce ? 1'b1 : div_ppu + 1'b1;
-
-            // reset the ticker on the first ppu tick at or after a cpu tick.
-            if (cpu_ce)
-                ppu_tick <= 0;
-            else if (ppu_ce)
-                ppu_tick <= ppu_tick + 1'b1;
-        end
-
-        // Add one extra PPU tick every 5 cpu cycles for PAL.
-        if ((cpu_ce)&&(apu_pal))
-            cpu_tick_count <= cpu_tick_count[2] ? 3'd0 : cpu_tick_count + 1'b1;
-        
-        // SDRAM Clock
-        div_sys <= div_sys + 1'b1;
-        
-        // De-Jitter shenanigans
-        if (faux_pixel_cnt == 3)
-            freeze_clocks <= 1'b0;
-
-        if (|faux_pixel_cnt)
-            faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
-
-        if (skip_pixel && (faux_pixel_cnt == 0)) begin
-            freeze_clocks <= 1'b1;
-            faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
-        end
-
-        if (~rst_n)
+        if (!rst_n) begin
+            div_cpu_cnt <= 4'd0;
+            div_ppu_cnt <= 2'd0;
+            div_sys     <= 2'd0;
             odd_or_even <= 1'b1;
-        else if (cpu_ce) 
-            odd_or_even <= ~odd_or_even;
+        `ifdef DEJITTER_ENABLED
+            cpu_tick_count <= 3'd0;
+            freeze_clocks <= 1'b0;
+        `endif
+        end else begin
+            // Reset if system type changes
+            apu_last_pal <= apu_pal;
+            if (apu_last_pal != apu_pal) begin
+                div_cpu_cnt <= 4'd0;
+                div_ppu_cnt <= 2'd0;
+                div_sys     <= 2'd0;
+                odd_or_even <= 1'b1;
+            `ifdef DEJITTER_ENABLED
+                cpu_tick_count <= 3'd0;
+                freeze_clocks <= 1'b0;
+            `endif
+            end
 
-        // Realign if the system type changes.
-        apu_last_pal <= apu_pal;
-        if (apu_last_pal != apu_pal) begin
-            div_cpu <= 5'd1;
-            div_ppu <= 3'd1;
-            div_sys <= 0;
-            cpu_tick_count <= 0;
+            // Freeze system clocks for jitter compensation
+        `ifdef DEJITTER_ENABLED
+            if (~freeze_clocks) begin
+        `endif
+                // Simplified counters: Increment and wrap
+                div_cpu_cnt <= cpu_ce ? 4'd0 : div_cpu_cnt + 4'd1;
+                div_ppu_cnt <= ppu_ce ? 2'd0 : div_ppu_cnt + 2'd1;
+                div_sys     <= div_sys + 2'd1;
+        `ifdef DEJITTER_ENABLED
+            end
+        `endif
+        
+            // Add one extra PPU tick every 5 cpu cycles for PAL.
+            `ifdef DEJITTER_ENABLED
+                if (cpu_ce && apu_pal) begin
+                    cpu_tick_count <= (cpu_tick_count == 3'd4) ? 3'd0 : cpu_tick_count + 3'd1;
+                end
+
+                // De-Jitter shenanigans
+                if (faux_pixel_cnt == 3)
+                    freeze_clocks <= 1'b0;
+
+                if (|faux_pixel_cnt)
+                    faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
+
+                if (skip_pixel && (faux_pixel_cnt == 0)) begin
+                    freeze_clocks <= 1'b1;
+                    faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
+                end
+            `endif
+            
+            // Toggle odd_or_even on CPU clock enable
+            if (cpu_ce) 
+                odd_or_even <= ~odd_or_even;
         end
     end
+
     // /* --- APU Register Access Mapping --- */
     // // Ensure apu_address_for_module is 16-bit by padding 0x40 to 6 bits
     // wire [15:0] apu_address_for_module;
