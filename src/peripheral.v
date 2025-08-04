@@ -286,7 +286,7 @@ module tqvp_fjpolo_rv2a03 (
         .DmaReq(),          // Output, but ignored for now
         .DmaAddr(),         // Output, but ignored for now
         .IRQ(apu_IRQ),      // Captured in status register
-        .apu_enhanced_ce(1'b0),
+        .apu_enhanced_ce(1'b1),
         .apu_mapper_saturates(1'b0),
         .o_ce()            // APU's output enable (when Sample is valid)
     );

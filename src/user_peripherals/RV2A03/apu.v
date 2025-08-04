@@ -3,28 +3,27 @@
 `define COCOTB_TESTING
 
 module LenCounterUnit (
-    input  logic       clk,
-    input  logic       reset,
-    input  logic       cold_reset,
-    input  logic       len_clk,
-    input  logic       aclk1,
-    input  logic       aclk1_d,
-    input  logic [7:0] load_value,
-    input  logic       halt_in,
-    input  logic       addr,
-    input  logic       is_triangle,
-    input  logic       write,
-    input  logic       enabled,
-    output logic       lc_on
+    (* keep *) input  logic       clk,
+    (* keep *) input  logic       reset,
+    (* keep *) input  logic       cold_reset,
+    (* keep *) input  logic       len_clk,
+    (* keep *) input  logic       aclk1,
+    (* keep *) input  logic       aclk1_d,
+    (* keep *) input  logic [7:0] load_value,
+    (* keep *) input  logic       halt_in,
+    (* keep *) input  logic       addr,
+    (* keep *) input  logic       is_triangle,
+    (* keep *) input  logic       write,
+    (* keep *) input  logic       enabled,
+    (* keep *) output logic       lc_on
 );
 
     (* keep *) logic lc_on_1;
     (* keep *) logic clear_next;
+    (* keep *) logic [7:0] len_counter_int;
+    (* keep *) logic halt, halt_next;
+    (* keep *) logic [7:0] len_counter_next;
     always_ff @(posedge clk) begin : lenunit
-        logic [7:0] len_counter_int;
-        logic halt, halt_next;
-        logic [7:0] len_counter_next;
-
         if (aclk1_d)
             if (~enabled)
                 lc_on <= 0;
@@ -116,47 +115,46 @@ module EnvelopeUnit (
 endmodule
 
 module SquareChan (
-    input  logic       MMC5,
-    input  logic       clk,
-    input  logic       ce,
-    input  logic       aclk1,
-    input  logic       aclk1_d,
-    input  logic       reset,
-    input  logic       cold_reset,
-    input  logic       allow_us,
-    input  logic       sq2,
-    input  logic [1:0] Addr,
-    input  logic [7:0] DIN,
-    input  logic       write,
-    input  logic [7:0] lc_load,
-    input  logic       LenCtr_Clock,
-    input  logic       Env_Clock,
-    input  logic       odd_or_even,
+    (* keep *) input  logic       MMC5,
+    (* keep *) input  logic       clk,
+    (* keep *) input  logic       ce,
+    (* keep *) input  logic       aclk1,
+    (* keep *) input  logic       aclk1_d,
+    (* keep *) input  logic       reset,
+    (* keep *) input  logic       cold_reset,
+    (* keep *) input  logic       allow_us,
+    (* keep *) input  logic       sq2,
+    (* keep *) input  logic [1:0] Addr,
+    (* keep *) input  logic [7:0] DIN,
+    (* keep *) input  logic       write,
+    (* keep *) input  logic [7:0] lc_load,
+    (* keep *) input  logic       LenCtr_Clock,
+    (* keep *) input  logic       Env_Clock,
+    (* keep *) input  logic       odd_or_even,
     (* keep *) input  logic       Enabled,
-    output logic [3:0] Sample,
-    output logic       IsNonZero
+    (* keep *) output logic [3:0] Sample,
+    (* keep *) output logic       IsNonZero
 );
 
     // Register 1
-    logic [1:0] Duty;
+    (* keep *) logic [1:0] Duty;
 
     // Register 2
-    logic SweepEnable, SweepNegate, SweepReset;
-    logic [2:0] SweepPeriod, SweepDivider, SweepShift;
+    (* keep *) logic SweepEnable, SweepNegate, SweepReset;
+    (* keep *) logic [2:0] SweepPeriod, SweepDivider, SweepShift;
+    (* keep *) logic [10:0] Period;
+    (* keep *) logic [11:0] TimerCtr;
+    (* keep *) logic [2:0] SeqPos;
+    (* keep *) logic [10:0] ShiftedPeriod;
+    (* keep *) logic [10:0] PeriodRhs;
+    (* keep *) logic [11:0] NewSweepPeriod;
 
-    logic [10:0] Period;
-    logic [11:0] TimerCtr;
-    logic [2:0] SeqPos;
-    logic [10:0] ShiftedPeriod;
-    logic [10:0] PeriodRhs;
-    logic [11:0] NewSweepPeriod;
-
-    logic ValidFreq;
-    logic subunit_write;
-    logic [3:0] Envelope;
-    logic lc;
-    logic DutyEnabledUsed;
-    logic DutyEnabled;
+    (* keep *) logic ValidFreq;
+    (* keep *) logic subunit_write;
+    (* keep *) logic [3:0] Envelope;
+    (* keep *) logic lc;
+    (* keep *) logic DutyEnabledUsed;
+    (* keep *) logic DutyEnabled;
 
     assign DutyEnabledUsed = MMC5 ^ DutyEnabled;
     assign ShiftedPeriod = (Period >> SweepShift);
@@ -1054,31 +1052,31 @@ module FrameCtr (
 endmodule
 
 module APU (
-    input  logic        MMC5,
-    input  logic        clk,
-    input  logic        PHI2,
-    input  logic        ce,
-    input  logic        reset,
-    input  logic        cold_reset,
-    input  logic        allow_us,       // Set to 1 to allow ultrasonic frequencies
-    input  logic        PAL,
-    input  logic  [4:0] ADDR,           // APU Address Line
-    input  logic  [7:0] DIN,            // Data to APU
-    input  logic        RW,
-    input  logic        CS,
-    input  logic  [4:0] audio_channels, // Enabled audio channels
-    input  logic  [7:0] DmaData,        // Input data to DMC from memory.
-    input  logic        odd_or_even,
-    input  logic        DmaAck,         // 1 when DMC byte is on DmcData. DmcDmaRequested should go low.
-    output logic  [7:0] DOUT,           // Data from APU
-    output wire  [15:0] Sample,
-    output logic        DmaReq,         // 1 when DMC wants DMA
-    output logic [15:0] DmaAddr,        // Address DMC wants to read
-    output logic        IRQ,            // IRQ asserted high == asserted
+    (* keep *) input  logic        MMC5,
+    (* keep *) input  logic        clk,
+    (* keep *) input  logic        PHI2,
+    (* keep *) input  logic        ce,
+    (* keep *) input  logic        reset,
+    (* keep *) input  logic        cold_reset,
+    (* keep *) input  logic        allow_us,       // Set to 1 to allow ultrasonic frequencies
+    (* keep *) input  logic        PAL,
+    (* keep *) input  logic  [4:0] ADDR,           // APU Address Line
+    (* keep *) input  logic  [7:0] DIN,            // Data to APU
+    (* keep *) input  logic        RW,
+    (* keep *) input  logic        CS,
+    (* keep *) input  logic  [4:0] audio_channels, // Enabled audio channels
+    (* keep *) input  logic  [7:0] DmaData,        // Input data to DMC from memory.
+    (* keep *) input  logic        odd_or_even,
+    (* keep *) input  logic        DmaAck,         // 1 when DMC byte is on DmcData. DmcDmaRequested should go low.
+    (* keep *) output logic  [7:0] DOUT,           // Data from APU
+    (* keep *) output wire  [15:0] Sample,
+    (* keep *) output logic        DmaReq,         // 1 when DMC wants DMA
+    (* keep *) output logic [15:0] DmaAddr,        // Address DMC wants to read
+    (* keep *) output logic        IRQ,            // IRQ asserted high == asserted
     // Enhanced APU
-    input  logic        apu_enhanced_ce,
-    input  logic        apu_mapper_saturates,
-    output logic        o_ce
+    (* keep *) input  logic        apu_enhanced_ce,
+    (* keep *) input  logic        apu_mapper_saturates,
+    (* keep *) output logic        o_ce
     );
 
 (* keep *) reg apu_reg0A_is_3E = 0;
@@ -1104,7 +1102,7 @@ end
 
 
 
-reg [15:0] sample_reg;
+(* keep *) reg [15:0] sample_reg;
 initial sample_reg = 'h0;
 always_ff @(posedge clk) begin
         sample_reg <= sample_wire;
