@@ -228,7 +228,6 @@ module tqvp_fjpolo_rv2a03 (
         .reset(~rst_n),
         .cold_reset(~rst_n),
         .allow_us(apu_us),
-        .PAL(1'b0), // NTSC is now hardcoded.
         .ADDR(address[4:0]),
         .DIN(data_in[7:0]),
         .RW(apu_rw), 
