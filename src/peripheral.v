@@ -324,20 +324,6 @@ module tqvp_fjpolo_rv2a03 (
             end
         end
     end
-    // Implement a 32-bit read/write register at address 0
-    reg [31:0] example_data;
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            example_data <= 0;
-        end else begin
-            if (address == 6'h0) begin
-                if (data_write_n != 2'b11)              example_data[7:0]   <= data_in[7:0];
-                if (data_write_n[1] != data_write_n[0]) example_data[15:8]  <= data_in[15:8];
-                if (data_write_n == 2'b10)              example_data[31:16] <= data_in[31:16];
-            end
-        end
-    end
-
     // The bottom 8 bits of the stored data are added to ui_in and output to uo_out.
     assign uo_out[7:4] = ui_in[7:4];
     assign uo_out[3]   = apu_phi2_clk;
