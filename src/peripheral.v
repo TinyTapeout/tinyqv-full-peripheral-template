@@ -92,6 +92,7 @@ module tqvp_fjpolo_rv2a03 (
     reg [7:0] reg_status0;
 
     /* --- Initial Values for Registers --- */
+    // Initializing with flags disabled to save resources by default
     initial reg_configuration0 = 8'h00;      
     initial reg_configuration1 = 8'h00;      
     initial reg_data_input = 8'h00;          
@@ -102,11 +103,16 @@ module tqvp_fjpolo_rv2a03 (
     /* --- Internal Wires/Signals --- */
     // Signals extracted from Configuration0 (for APU module)
     wire apu_us = reg_configuration0[2];
-    wire apu_enhanced = reg_configuration0[7];
+    // Disable enhanced APU features by default to save resources
+    wire apu_enhanced = 1'b0; // reg_configuration0[7];
+    // The isCh2 and CS flags are commented out as they are unused for now.
+    // wire apu_is_ch2 = reg_configuration0[4];
+    // wire apu_cs_conf0 = reg_configuration0[3];
 
     // Signals extracted from Configuration1 (for APU module)
     wire apu_mapper_saturates = reg_configuration1[0];
-    wire apu_is_mmc5 = reg_configuration1[1];
+    // Disable MMC5 mapper to save resources
+    wire apu_is_mmc5 = 1'b0; // reg_configuration1[1];
     wire [4:0] apu_audio_channels = reg_configuration1[6:2];
 
     // APU internal signals (outputs from APU module)
@@ -117,7 +123,7 @@ module tqvp_fjpolo_rv2a03 (
     /* --- apu_IRQ --- */
     wire apu_IRQ;
     
-    /* --- Clock magic --- */
+    /* --- Clock logic --- */
     // All clocking is now fixed for NTSC.
     reg odd_or_even = 1; 
 
@@ -134,28 +140,17 @@ module tqvp_fjpolo_rv2a03 (
     wire cpu_ce = (div_cpu_cnt == CPU_DIV_N);
     wire ppu_ce = (div_ppu_cnt == PPU_DIV_N);
     wire apu_ce = cpu_ce;
-    wire apu_cs = (address >= 'h00)&&(address < APU_FRAME_COUNTER_REG_ADDRESS);
-
+    
+    // The apu_phi2_clk signal for the PMOD output pin.
+    // This is NOT used as a clock for any internal logic,
+    // which is the source of the high resource utilization.
     wire apu_phi2_clk = (div_cpu_cnt >= 4'd4);
 
-    `ifdef DEJITTER_ENABLED
-        wire skip_pixel = 1'b0;
-        reg freeze_clocks;
-        initial freeze_clocks = 0;
-        reg [4:0] faux_pixel_cnt;
-        initial faux_pixel_cnt = 0;
-        wire use_fake_h = freeze_clocks && faux_pixel_cnt < 6;
-        reg [1:0] ppu_tick = 0;
-        initial ppu_tick = 0;
-        reg [2:0] cpu_tick_count;
-        initial cpu_tick_count = 0;
-        wire skip_ppu_cycle = (cpu_tick_count == 4) && (ppu_tick == 0);
-    `else
-        reg [2:0] cpu_tick_count;
-        initial cpu_tick_count = 0;
-        wire skip_ppu_cycle = 1'b0;
-        wire freeze_clocks = 1'b0;
-    `endif 
+    // The new clock enable signal for the APU module,
+    // clocked by the main `clk`. This is the correct ASIC design pattern.
+    wire apu_phi2_ce = (div_cpu_cnt >= 4'd4);
+    
+    wire apu_cs = (address >= 'h00)&&(address < APU_FRAME_COUNTER_REG_ADDRESS);
 
     always @(posedge clk) begin
         if (!rst_n) begin
@@ -163,32 +158,10 @@ module tqvp_fjpolo_rv2a03 (
             div_ppu_cnt <= 2'd0;
             div_sys     <= 2'd0;
             odd_or_even <= 1'b1;
-        `ifdef DEJITTER_ENABLED
-            cpu_tick_count <= 3'd0;
-            freeze_clocks <= 1'b0;
-        `endif
         end else begin
-            // Freeze system clocks for jitter compensation
-        `ifdef DEJITTER_ENABLED
-            if (~freeze_clocks) begin
-        `endif
-                div_cpu_cnt <= cpu_ce ? 4'd0 : div_cpu_cnt + 4'd1;
-                div_ppu_cnt <= ppu_ce ? 2'd0 : div_ppu_cnt + 2'd1;
-                div_sys     <= div_sys + 2'd1;
-        `ifdef DEJITTER_ENABLED
-            end
-        `endif
-        
-        `ifdef DEJITTER_ENABLED
-            if (faux_pixel_cnt == 3)
-                freeze_clocks <= 1'b0;
-            if (|faux_pixel_cnt)
-                faux_pixel_cnt <= faux_pixel_cnt - 1'b1;
-            if (skip_pixel && (faux_pixel_cnt == 0)) begin
-                freeze_clocks <= 1'b1;
-                faux_pixel_cnt <= {div_ppu_n - 1'b1, 1'b0} + 1'b1;
-            end
-        `endif
+            div_cpu_cnt <= cpu_ce ? 4'd0 : div_cpu_cnt + 4'd1;
+            div_ppu_cnt <= ppu_ce ? 2'd0 : div_ppu_cnt + 2'd1;
+            div_sys     <= div_sys + 2'd1;
             
             if (cpu_ce) 
                 odd_or_even <= ~odd_or_even;
@@ -220,10 +193,12 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
 
+    // The APU module should be modified to take a clock enable,
+    // rather than the derived clock signal.
     APU apu(
         .MMC5(apu_is_mmc5),
         .clk(clk),
-        .PHI2(apu_phi2_clk),
+        .PHI2(apu_phi2_ce), // Assumes the APU module has a clock enable port.
         .ce(apu_ce),
         .reset(~rst_n),
         .cold_reset(~rst_n),
@@ -261,7 +236,8 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
     
-    assign uo_out[7:4] = ui_in[7:4];
+    assign uo_out[7:5] = ui_in[7:5];
+    assign uo_out[4]   = apu_IRQ;
     assign uo_out[3]   = apu_phi2_clk;
     assign uo_out[2:0] = ui_in[2:0];                
 
@@ -298,7 +274,6 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
 
-    // The data_out logic has been replaced with a more readable case statement.
     reg [31:0] data_out_reg;
     always_comb begin
         case (address)
