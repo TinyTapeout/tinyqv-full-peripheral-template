@@ -629,21 +629,25 @@ module FrameCtr (
     logic frame_interrupt_buffer;
     logic frame_int_disabled;
     logic FrameInterrupt;
-    logic frame_irq, set_irq;
+    logic set_irq;
     logic FrameSeqMode_2;
     logic frame_reset_2;
     logic w4017_1, w4017_2;
     logic [14:0] frame;
+    logic [14:0] frame_next;
+
+    // Registered outputs for stable enables
+    logic frame_half_reg, frame_quarter_reg;
+    assign frame_half = frame_half_reg;
+    assign frame_quarter = frame_quarter_reg;
 
     // Register 4017
     logic DisableFrameInterrupt;
     logic FrameSeqMode;
 
-    assign frame_int_disabled = DisableFrameInterrupt; // | (write && addr == 5'h17 && din[6]);
+    assign frame_int_disabled = DisableFrameInterrupt;
     assign irq = FrameInterrupt && ~DisableFrameInterrupt;
     assign irq_flag = frame_interrupt_buffer;
-
-    // This is implemented from the original LSFR frame counter logic taken from the 2A03 netlists.
 
     logic seq_mode;
     assign seq_mode = aclk1 ? FrameSeqMode : FrameSeqMode_2;
@@ -657,52 +661,58 @@ module FrameCtr (
 
     assign set_irq = frm_d & ~FrameSeqMode;
     assign frame_reset = frm_d | frm_e | w4017_2;
-    assign frame_half = (frm_b | frm_d | frm_e | (w4017_2 & seq_mode));
-    assign frame_quarter = (frm_a | frm_b | frm_c | frm_d | frm_e | (w4017_2 & seq_mode));
 
-    always_ff @(posedge clk) begin : apu_block
+    always_comb begin
+        frame_next = frame_reset_2 ? 15'h7FFF : {frame[13:0], ((frame[14] ^ frame[13]) | ~|frame)};
+    end
 
-        if (aclk1) begin
-            frame <= frame_reset_2 ? 15'h7FFF : {frame[13:0], ((frame[14] ^ frame[13]) | ~|frame)};
-            w4017_2 <= w4017_1;
-            w4017_1 <= 0;
-            FrameSeqMode_2 <= FrameSeqMode;
-            frame_reset_2 <= 0;
-        end
-
-        if (aclk2 & frame_reset)
-            frame_reset_2 <= 1;
-
-        // Continously update the Frame IRQ state and read buffer
-        if (set_irq & ~frame_int_disabled) begin
-            FrameInterrupt <= 1;
-            frame_interrupt_buffer <= 1;
-        end else if (addr == 2'h1 && read)
-            FrameInterrupt <= 0;
-        else
-            frame_interrupt_buffer <= FrameInterrupt;
-
-        if (frame_int_disabled)
-            FrameInterrupt <= 0;
-
-        if (write_ce && addr == 3 && ~MMC5) begin  // Register $4017
-            FrameSeqMode <= din[7];
-            DisableFrameInterrupt <= din[6];
-            w4017_1 <= 1;
-        end
-
+    always_ff @(posedge clk or posedge reset) begin : apu_block
         if (reset) begin
             FrameInterrupt <= 0;
             frame_interrupt_buffer <= 0;
             w4017_1 <= 0;
             w4017_2 <= 0;
             DisableFrameInterrupt <= 0;
-            if (cold_reset) FrameSeqMode <= 0; // Don't reset this on warm reset
+            if (cold_reset) FrameSeqMode <= 0;
             frame <= 15'h7FFF;
+            frame_half_reg <= 0;
+            frame_quarter_reg <= 0;
+            frame_reset_2 <= 0;
+        end else begin
+            if (aclk1) begin
+                frame <= frame_next;
+                w4017_2 <= w4017_1;
+                w4017_1 <= 0;
+                FrameSeqMode_2 <= FrameSeqMode;
+
+                frame_half_reg <= (frm_b | frm_d | frm_e | (w4017_2 & seq_mode));
+                frame_quarter_reg <= (frm_a | frm_b | frm_c | frm_d | frm_e | (w4017_2 & seq_mode));
+
+                frame_reset_2 <= aclk2 & frame_reset;
+            end
+
+            // Continuously update the Frame IRQ state and read buffer
+            if (set_irq & ~frame_int_disabled) begin
+                FrameInterrupt <= 1;
+                frame_interrupt_buffer <= 1;
+            end else if (addr == 2'h1 && read)
+                FrameInterrupt <= 0;
+            else
+                frame_interrupt_buffer <= FrameInterrupt;
+
+            if (frame_int_disabled)
+                FrameInterrupt <= 0;
+
+            if (write_ce && addr == 3 && ~MMC5) begin
+                FrameSeqMode <= din[7];
+                DisableFrameInterrupt <= din[6];
+                w4017_1 <= 1;
+            end
         end
     end
 
 endmodule
+
 module APU (
     input  logic         MMC5,
     input  logic         clk,
