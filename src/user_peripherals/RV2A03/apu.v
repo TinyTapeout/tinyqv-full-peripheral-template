@@ -376,116 +376,6 @@ module TriangleChan (
 
 endmodule
 
-module TriangleChan_enhanced_5b (
-    input  logic       clk,
-    input  logic       phi1,
-    input  logic       aclk1,
-    input  logic       aclk1_d,
-    input  logic       reset,
-    input  logic       cold_reset,
-    input  logic       allow_us,
-    input  logic [1:0] Addr,
-    input  logic [7:0] DIN,
-    input  logic       write,
-    input  logic [7:0] lc_load,
-    input  logic       LenCtr_Clock,
-    input  logic       LinCtr_Clock,
-    input  logic       Enabled,
-    output logic [4:0] Sample,       // Change output Sample to 5 bits
-    output logic       IsNonZero
-);
-    logic [10:0] Period, applied_period, TimerCtr;
-    initial Period = 'h3E;
-    logic [4:0] SeqPos;              // Change SeqPos to 5 bits
-    logic [6:0] LinCtrPeriod, LinCtrPeriod_1, LinCtr;
-    logic LinCtrl, line_reload;
-    logic LinCtrZero;
-    logic lc;
-
-    logic LenCtrZero;
-    logic subunit_write;
-    logic [4:0] sample_latch;        // Change sample_latch to 5 bits
-
-    assign LinCtrZero = ~|LinCtr;
-    assign IsNonZero = lc;
-    assign subunit_write = (Addr == 0 || Addr == 3) & write;
-
-    // Adjust Sample assignment for 5-bit output
-    assign Sample = (applied_period > 1 || allow_us) ? (SeqPos[4:0] ^ {5{~SeqPos[4]}}) : sample_latch;
-
-    LenCounterUnit LenTri (
-        .clk            (clk),
-        .reset          (reset),
-        .cold_reset     (cold_reset),
-        .aclk1          (aclk1),
-        .aclk1_d        (aclk1_d),
-        .len_clk        (LenCtr_Clock),
-        .load_value     (lc_load),
-        .halt_in        (DIN[7]),
-        .addr           (Addr[0]),
-        .is_triangle    (1'b1),
-        .write          (subunit_write),
-        .enabled        (Enabled),
-        .lc_on          (lc)
-    );
-
-    always_ff @(posedge clk) begin
-        if (phi1) begin
-            if (TimerCtr == 0) begin
-                TimerCtr <= Period;
-                applied_period <= Period;
-                if (IsNonZero & ~LinCtrZero)
-                    SeqPos <= SeqPos + 1'd1;
-            end else begin
-                TimerCtr <= TimerCtr - 1'd1;
-            end
-        end
-
-        if (aclk1) begin
-            LinCtrPeriod_1 <= LinCtrPeriod;
-        end
-
-        if (LinCtr_Clock) begin
-            if (line_reload)
-                LinCtr <= LinCtrPeriod_1;
-            else if (!LinCtrZero)
-                LinCtr <= LinCtr - 1'd1;
-
-            if (!LinCtrl)
-                line_reload <= 0;
-        end
-
-        if (write) begin
-            case (Addr)
-                0: begin
-                    LinCtrl <= DIN[7];
-                    LinCtrPeriod <= DIN[6:0];
-                end
-                2: begin
-                    Period[7:0] <= DIN;
-                end
-                3: begin
-                    Period[10:8] <= DIN[2:0];
-                    line_reload <= 1;
-                end
-            endcase
-        end
-
-        if (reset) begin
-            sample_latch <= 5'h1F;   // Initialize to 5-bit value
-            Period <= 0;
-            TimerCtr <= 0;
-            SeqPos <= 0;
-            LinCtrPeriod <= 0;
-            LinCtr <= 0;
-            LinCtrl <= 0;
-            line_reload <= 0;
-        end
-
-        if (applied_period > 1) sample_latch <= Sample;
-    end
-endmodule
-
 module TriangleChan_enhanced_6b (
     input  logic       clk,
     input  logic       phi1,
@@ -1018,11 +908,7 @@ module APU (
     output wire  [15:0] Sample,
     output logic        DmaReq,         // 1 when DMC wants DMA
     output logic [15:0] DmaAddr,        // Address DMC wants to read
-    output logic        IRQ,            // IRQ asserted high == asserted
-    // Enhanced APU
-    input  logic        apu_enhanced_ce,
-    input  logic        apu_mapper_saturates,
-    output logic        o_ce
+    output logic        IRQ             // IRQ asserted high == asserted
     );
 
     reg [7:0] len_counter_lut[0:31];
@@ -1111,9 +997,6 @@ module APU (
 
     logic [4:0] enabled_buffer, enabled_buffer_1;
     assign Enabled = aclk1 ? enabled_buffer : enabled_buffer_1;
-
-    // Assign the new o_ce output to aclk1
-    assign o_ce = aclk1; // This will indicate when Sample is valid
 
     always_ff @(posedge clk) begin
         phi2_old <= PHI2;
@@ -1205,25 +1088,6 @@ module APU (
         .IsNonZero    (TriNonZero)
     );
 
-    TriangleChan_enhanced_5b Tri_enhanced (
-        .clk          (clk),
-        .phi1         (phi1),
-        .aclk1        (aclk1),
-        .aclk1_d      (aclk1_delayed),
-        .reset        (reset),
-        .cold_reset   (cold_reset),
-        .allow_us     (allow_us),
-        .Addr         (ADDR[1:0]),
-        .DIN          (DIN),
-        .write        (ApuMW2 && write),
-        .lc_load      (lc_load),
-        .LenCtr_Clock (ClkL),
-        .LinCtr_Clock (ClkE),
-        .Enabled      (Enabled[2]),
-        .Sample       (TriSample_enhanced),
-        .IsNonZero    (TriNonZero_enhanced)
-    );
-
     NoiseChan Noi (
         .clk          (clk),
         .ce           (ce),
@@ -1267,11 +1131,7 @@ module APU (
         .noise        (NoiSample),
         .triangle     (TriSample),
         .dmc          (DmcSample),
-        .sample       (Sample),
-        // Enhanced APU
-        .apu_enhanced_ce(apu_enhanced_ce),
-        .apu_triangle_enhanced(TriSample_enhanced),
-        .apu_mapper_saturates(apu_mapper_saturates)
+        .sample       (Sample)
     );
 
     FrameCtr frame_counter (
@@ -1306,11 +1166,7 @@ module APUMixer (
     input  logic  [3:0] triangle,
     input  logic  [3:0] noise,
     input  logic  [6:0] dmc,
-    output logic [15:0] sample,
-    // Enhanced APU
-    input  logic        apu_enhanced_ce,
-    input  logic  [4:0] apu_triangle_enhanced,
-    input  logic        apu_mapper_saturates
+    output logic [15:0] sample
 );
 
 // Note: The original non-linear pulse_lut has been removed.
@@ -1338,14 +1194,6 @@ initial begin
     noise_lut[15] = 6'h28;
 end
 
-reg [15:0] mix_lut[0:511];
-initial begin
-    mix_lut[0] = 16'h0000;
-    mix_lut[1] = 16'h0128;
-    // ... (mix_lut values remain unchanged)
-    mix_lut[511] = 16'h0000;
-end
-
 // Square waves: A simple linear sum of the two channels.
 wire [15:0] ch1_output = {12'b0, square1} + {12'b0, square2};
 
@@ -1355,16 +1203,6 @@ wire [15:0] tri_normal_output_scaled = {10'b0, triangle << 2};
 wire [15:0] noise_output_scaled = {10'b0, noise_lut[noise]};
 
 // Sum all channels for the normal linear mixer output
-wire [15:0] sample_normal_linear = ch1_output + tri_normal_output_scaled + noise_output_scaled;
+assign sample = ch1_output + tri_normal_output_scaled + noise_output_scaled;
 
-// Enhanced mixer path (combinatorial linear with enhanced triangle)
-// Use a linear approximation for the enhanced triangle
-wire [15:0] tri_enhanced_output_scaled = {10'b0, apu_triangle_enhanced << 1};
-
-// Sum all channels for the enhanced linear mixer output
-wire [15:0] sample_enhanced_linear = ch1_output + tri_enhanced_output_scaled + noise_output_scaled;
-
-// Final sample selection based on apu_enhanced_ce
-// The apu_mapper_saturates signal is no longer used in this simplified linear mixing scheme.
-assign sample = apu_enhanced_ce ? sample_enhanced_linear : sample_normal_linear;
 endmodule

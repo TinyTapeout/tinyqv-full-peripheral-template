@@ -134,53 +134,6 @@ async def test_all_channels_simultaneously(tqv, dut):
     plt.savefig('apu_output_sample_normal.png')
     dut._log.info("Plot saved as apu_output_sample_normal.png")
 
-
-# --- Test Function 2 (New, Enhanced) ---
-async def test_all_channels_simultaneously_enhanced(tqv, dut):
-    """
-    Test Phase 2: Configures and runs all three channels simultaneously with the
-    Enhanced APU bit enabled.
-    """
-    dut._log.info("--- Test Phase 2: All channels together (Enhanced Mixer) ---")
-
-    # Enable Enhanced APU bit b7 (0x80)
-    await tqv.write_byte_reg(CONFIGURATION0_REG_ADDR, 0x89 | 0x80)
-
-    # Enable channels: Sq1, Sq2, Tri
-    await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x07)
-    
-    await configure_sq1(tqv)
-    await configure_sq2(tqv)
-    await configure_tri(tqv)
-
-    # Add a short delay to allow the linear counter to stabilize
-    await ClockCycles(dut.clk, 50000)
-
-    # Capture output and generate plot
-    output_samples = []
-    NUM_CYCLES_TO_CAPTURE = 250
-    for i in range(NUM_CYCLES_TO_CAPTURE):
-        msb_value = await tqv.read_byte_reg(DATA_OUTPUT_MSB_REG_ADDR)
-        lsb_value = await tqv.read_byte_reg(DATA_OUTPUT_LSB_REG_ADDR)
-        combined_sample = (msb_value << 8) | lsb_value
-        if combined_sample & 0x8000:
-            signed_sample = combined_sample - 0x10000
-        else:
-            signed_sample = combined_sample
-        output_samples.append(signed_sample)
-    
-    timestamps = np.arange(NUM_CYCLES_TO_CAPTURE) * 100e-9
-    plt.figure(figsize=(12, 6))
-    plt.plot(np.array(timestamps) * 1e3, output_samples)
-    plt.title('APU Mixed Output Sample (Enhanced Mixer)')
-    plt.xlabel('Time (ms)')
-    plt.ylabel('Sample Value (16-bit signed)')
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig('apu_output_sample_enhanced.png')
-    dut._log.info("Plot saved as apu_output_sample_enhanced.png")
-
-
 @cocotb.test()
 async def test_project(dut):
     dut._log.info("Start")
@@ -202,12 +155,5 @@ async def test_project(dut):
 
     # Call the test function for the normal mixer
     await test_all_channels_simultaneously(tqv, dut)
-    
-    # --- GLOBAL APU RESET for the next test ---
-    dut._log.info("Performing a global APU reset for the enhanced test.")
-    await disable_all_channels(tqv)
-
-    # Now call the new test function for the enhanced mixer
-    await test_all_channels_simultaneously_enhanced(tqv, dut)
 
     dut._log.info("Test finished.")

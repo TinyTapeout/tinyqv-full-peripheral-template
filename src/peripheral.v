@@ -215,10 +215,7 @@ module tqvp_fjpolo_rv2a03 (
         .Sample(apu_output_sample_16b),
         .DmaReq(),        
         .DmaAddr(),       
-        .IRQ(apu_IRQ),    
-        .apu_enhanced_ce(apu_enhanced),
-        .apu_mapper_saturates(apu_mapper_saturates),
-        .o_ce(apu_data_output_ready) // Now connected and used to gate the sample capture
+        .IRQ(apu_IRQ)
     );
 
     integer i;
