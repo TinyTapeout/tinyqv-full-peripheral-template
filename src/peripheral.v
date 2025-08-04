@@ -22,8 +22,8 @@
  //    0x01 - 0x0F - APU Register Direct Access (Pass-through for NES APU registers 0x4001-0x400F) - Read/Write
  //
  //    0x20 - Configuration0 - Read/Write
- //       | b7           | b6  | b5 | b4 | b3 | b2  | b1 | b0 |
- //       | Enhanced APU |     |    |    | CS | PAL | US | CE |
+ //       | b7           | b6  | b5 |    b4   | b3 | b2  | b1 | b0 |
+ //       | Enhanced APU |     |    |  isCh2  | CS | PAL | US | CE |
  //
  //    0x21 - Configuration1 - Read/Write
  //       | b7                  | b6 | b5 | b4 | b3 | b2 | b1 | b0 |
@@ -97,9 +97,9 @@ module tqvp_fjpolo_rv2a03 (
     /* --- Initial Values for Registers --- */
     initial reg_configuration0 = 8'h00;     // Initialize configuration register to 0
     initial reg_configuration1 = 8'h00;     // Initialize configuration register to 0
-    initial reg_data_input = 8'h00;        // Initialize data input register to 0
-    initial reg_data_output_msb = 8'hFF;   // Initialize data output MSB register to 0
-    initial reg_data_output_lsb = 8'h00;   // Initialize data output L
+    initial reg_data_input = 8'h00;         // Initialize data input register to 0
+    initial reg_data_output_msb = 8'hFF;    // Initialize data output MSB register to 0
+    initial reg_data_output_lsb = 8'h00;    // Initialize data output L
     initial reg_status0 = 8'h00;            // Initialize status register to 0
 
     /* --- Internal Wires/Signals --- */
@@ -255,29 +255,20 @@ module tqvp_fjpolo_rv2a03 (
             reg_data_output_lsb <= apu_output_sample_16b[7:0];
     end
 
-    /* Cold Reset */ 
-    reg cold_reset_counter;
-    initial cold_reset_counter = 1'b0;
-    always @(posedge clk) begin
-        if (!cold_reset_counter) begin
-            cold_reset_counter <= 1'b1;
-        end
-    end
-    /* --- NES APU Instance --- */
     APU apu(
-        .MMC5(1'b0),
+        .MMC5(apu_is_mmc5),
         .clk(clk),
         .PHI2(apu_phi2_clk),
         .ce(apu_ce),
         .reset(~rst_n),
         .cold_reset(~rst_n),
-        .allow_us(1'b1),
-        .PAL(1'b0),
+        .allow_us(apu_us),
+        .PAL(apu_pal),
         .ADDR(address[4:0]),
         .DIN(data_in[7:0]),
         .RW(apu_rw), // 0 - Write, 1 - Read
         .CS(apu_cs),
-        .audio_channels(5'b11111),
+        .audio_channels(apu_audio_channels),
         .DmaData(),         // Stubbed input
         .odd_or_even(odd_or_even),
         .DmaAck(),          // Stubbed input
@@ -286,8 +277,8 @@ module tqvp_fjpolo_rv2a03 (
         .DmaReq(),          // Output, but ignored for now
         .DmaAddr(),         // Output, but ignored for now
         .IRQ(apu_IRQ),      // Captured in status register
-        .apu_enhanced_ce(1'b1),
-        .apu_mapper_saturates(1'b0),
+        .apu_enhanced_ce(apu_enhanced),
+        .apu_mapper_saturates(apu_mapper_saturates),
         .o_ce()            // APU's output enable (when Sample is valid)
     );
 

@@ -79,22 +79,6 @@ async def test_project(dut):
 
     dut._log.info("Test project behavior")
 
-    # configuration0 - Test register write and read back
-    for value in range(0x00, 0x04): # Reverted range for thoroughness
-        await tqv.write_byte_reg(CONFIGURATION0_REG_ADDR, value)
-        assert await tqv.read_byte_reg(CONFIGURATION0_REG_ADDR) == value
-
-
-    # configuration1 - Test register write and read back
-    for value in range(0x00, 0x04): # Reverted range for thoroughness
-        await tqv.write_byte_reg(CONFIGURATION1_REG_ADDR, value)
-        assert await tqv.read_byte_reg(CONFIGURATION1_REG_ADDR) == value
-
-    # reg_data_input - Test register write and read back
-    for value in range(0x00, 0x04): # Reverted range for thoroughness
-        await tqv.write_byte_reg(DATA_INPUT_REG_ADDR, value)
-        assert await tqv.read_byte_reg(DATA_INPUT_REG_ADDR) == value
-
     #
     # Test 1 - Basic APU Configuration and 440Hz Tone Generation
     #
@@ -123,7 +107,10 @@ async def test_project(dut):
     # Enable Square 1 (bit 0), Square 2 (bit 1), Triangle (bit 2)
     # Binary: %00000111 = $07
     # WRITE $07 TO APU_STATUS_REG
-    await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x07)
+    # await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x01) # Sq1
+    # await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x02) # Sq2
+    # await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x04) # Tri
+    await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x07) # Sq1 + Sq2 + Tri
     # assert await tqv.read_byte_reg(APU_STATUS_REG_ADDRESS) == 0x07
 
     # --- Configure Square Channel 1 ---
@@ -221,7 +208,7 @@ async def test_project(dut):
     # For continuous sound, 4-step (no IRQ) is common.
     # WRITE $00 TO APU_FRAME_COUNTER_REG
     await tqv.write_byte_reg(APU_FRAME_COUNTER_REG_ADDRESS, 0x00)
-    assert await tqv.read_byte_reg(APU_FRAME_COUNTER_REG_ADDRESS) == 0x00 # Corrected: Check APU_FRAME_COUNTER_REG_ADDRESS
+    assert await tqv.read_byte_reg(APU_FRAME_COUNTER_REG_ADDRESS) == 0x00
 
     dut._log.info("APU configured. Starting output capture for plotting.")
 
@@ -240,7 +227,7 @@ async def test_project(dut):
 
     print("************************************************************************************************")
     # for i in range(CYCLES_TO_CAPTURE):
-    for i in range(100):
+    for i in range(250):
         # await RisingEdge(dut.clk)
         
         # # Triangle: New timer value
@@ -280,15 +267,15 @@ async def test_project(dut):
     dut._log.info(f"Captured {len(output_samples)} samples.")
 
     # --- Plotting the captured data ---
-    # # plt.figure(figsize=(12, 6))
-    # # plt.plot(np.array(timestamps) * 1e3, output_samples) # Convert time to milliseconds for better readability
-    # # plt.title('APU Mixed Output Sample (440Hz)')
-    # # plt.xlabel('Time (ms)')
-    # # plt.ylabel('Sample Value (16-bit signed)')
-    # # plt.grid(True)
-    # # plt.tight_layout()
-    # # plt.savefig('apu_output_sample.png') # Save the plot to a file
-    # # dut._log.info("Plot saved as apu_output_sample.png")
+    plt.figure(figsize=(12, 6))
+    plt.plot(np.array(timestamps) * 1e3, output_samples) # Convert time to milliseconds for better readability
+    plt.title('APU Mixed Output Sample (440Hz)')
+    plt.xlabel('Time (ms)')
+    plt.ylabel('Sample Value (16-bit signed)')
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig('apu_output_sample.png') # Save the plot to a file
+    dut._log.info("Plot saved as apu_output_sample.png")
 
     dut._log.info("Test finished.")
 

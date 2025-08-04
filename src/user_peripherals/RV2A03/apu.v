@@ -3,26 +3,26 @@
 `define COCOTB_TESTING
 
 module LenCounterUnit (
-    (* keep *) input  logic       clk,
-    (* keep *) input  logic       reset,
-    (* keep *) input  logic       cold_reset,
-    (* keep *) input  logic       len_clk,
-    (* keep *) input  logic       aclk1,
-    (* keep *) input  logic       aclk1_d,
-    (* keep *) input  logic [7:0] load_value,
-    (* keep *) input  logic       halt_in,
-    (* keep *) input  logic       addr,
-    (* keep *) input  logic       is_triangle,
-    (* keep *) input  logic       write,
-    (* keep *) input  logic       enabled,
-    (* keep *) output logic       lc_on
+    input  logic       clk,
+    input  logic       reset,
+    input  logic       cold_reset,
+    input  logic       len_clk,
+    input  logic       aclk1,
+    input  logic       aclk1_d,
+    input  logic [7:0] load_value,
+    input  logic       halt_in,
+    input  logic       addr,
+    input  logic       is_triangle,
+    input  logic       write,
+    input  logic       enabled,
+    output logic       lc_on
 );
 
-    (* keep *) logic lc_on_1;
-    (* keep *) logic clear_next;
-    (* keep *) logic [7:0] len_counter_int;
-    (* keep *) logic halt, halt_next;
-    (* keep *) logic [7:0] len_counter_next;
+    logic lc_on_1;
+    logic clear_next;
+    logic [7:0] len_counter_int;
+    logic halt, halt_next;
+    logic [7:0] len_counter_next;
     always_ff @(posedge clk) begin : lenunit
         if (aclk1_d)
             if (~enabled)
@@ -115,46 +115,46 @@ module EnvelopeUnit (
 endmodule
 
 module SquareChan (
-    (* keep *) input  logic       MMC5,
-    (* keep *) input  logic       clk,
-    (* keep *) input  logic       ce,
-    (* keep *) input  logic       aclk1,
-    (* keep *) input  logic       aclk1_d,
-    (* keep *) input  logic       reset,
-    (* keep *) input  logic       cold_reset,
-    (* keep *) input  logic       allow_us,
-    (* keep *) input  logic       sq2,
-    (* keep *) input  logic [1:0] Addr,
-    (* keep *) input  logic [7:0] DIN,
-    (* keep *) input  logic       write,
-    (* keep *) input  logic [7:0] lc_load,
-    (* keep *) input  logic       LenCtr_Clock,
-    (* keep *) input  logic       Env_Clock,
-    (* keep *) input  logic       odd_or_even,
-    (* keep *) input  logic       Enabled,
-    (* keep *) output logic [3:0] Sample,
-    (* keep *) output logic       IsNonZero
+    input  logic       MMC5,
+    input  logic       clk,
+    input  logic       ce,
+    input  logic       aclk1,
+    input  logic       aclk1_d,
+    input  logic       reset,
+    input  logic       cold_reset,
+    input  logic       allow_us,
+    input  logic       sq2,
+    input  logic [1:0] Addr,
+    input  logic [7:0] DIN,
+    input  logic       write,
+    input  logic [7:0] lc_load,
+    input  logic       LenCtr_Clock,
+    input  logic       Env_Clock,
+    input  logic       odd_or_even,
+    input  logic       Enabled,
+    output logic [3:0] Sample,
+    output logic       IsNonZero
 );
 
     // Register 1
-    (* keep *) logic [1:0] Duty;
+    logic [1:0] Duty;
 
     // Register 2
-    (* keep *) logic SweepEnable, SweepNegate, SweepReset;
-    (* keep *) logic [2:0] SweepPeriod, SweepDivider, SweepShift;
-    (* keep *) logic [10:0] Period;
-    (* keep *) logic [11:0] TimerCtr;
-    (* keep *) logic [2:0] SeqPos;
-    (* keep *) logic [10:0] ShiftedPeriod;
-    (* keep *) logic [10:0] PeriodRhs;
-    (* keep *) logic [11:0] NewSweepPeriod;
+    logic SweepEnable, SweepNegate, SweepReset;
+    logic [2:0] SweepPeriod, SweepDivider, SweepShift;
+    logic [10:0] Period;
+    logic [11:0] TimerCtr;
+    logic [2:0] SeqPos;
+    logic [10:0] ShiftedPeriod;
+    logic [10:0] PeriodRhs;
+    logic [11:0] NewSweepPeriod;
 
-    (* keep *) logic ValidFreq;
-    (* keep *) logic subunit_write;
-    (* keep *) logic [3:0] Envelope;
-    (* keep *) logic lc;
-    (* keep *) logic DutyEnabledUsed;
-    (* keep *) logic DutyEnabled;
+    logic ValidFreq;
+    logic subunit_write;
+    logic [3:0] Envelope;
+    logic lc;
+    logic DutyEnabledUsed;
+    logic DutyEnabled;
 
     assign DutyEnabledUsed = MMC5 ^ DutyEnabled;
     assign ShiftedPeriod = (Period >> SweepShift);
@@ -277,13 +277,13 @@ module TriangleChan (
     input  logic       LenCtr_Clock,
     input  logic       LinCtr_Clock,
     input  logic       Enabled,
-    (* keep *) output logic [3:0] Sample,
+    output logic [3:0] Sample,
     output logic       IsNonZero
 );
 
-    (* keep *)logic [10:0] Period, applied_period, TimerCtr;
+    logic [10:0] Period, applied_period, TimerCtr;
     initial Period = 'h3E;
-    (* keep *) logic [4:0] SeqPos;
+    logic [4:0] SeqPos;
     logic [6:0] LinCtrPeriod, LinCtrPeriod_1, LinCtr;
     logic LinCtrl, line_reload;
     logic LinCtrZero;
@@ -1052,34 +1052,34 @@ module FrameCtr (
 endmodule
 
 module APU (
-    (* keep *) input  logic        MMC5,
-    (* keep *) input  logic        clk,
-    (* keep *) input  logic        PHI2,
-    (* keep *) input  logic        ce,
-    (* keep *) input  logic        reset,
-    (* keep *) input  logic        cold_reset,
-    (* keep *) input  logic        allow_us,       // Set to 1 to allow ultrasonic frequencies
-    (* keep *) input  logic        PAL,
-    (* keep *) input  logic  [4:0] ADDR,           // APU Address Line
-    (* keep *) input  logic  [7:0] DIN,            // Data to APU
-    (* keep *) input  logic        RW,
-    (* keep *) input  logic        CS,
-    (* keep *) input  logic  [4:0] audio_channels, // Enabled audio channels
-    (* keep *) input  logic  [7:0] DmaData,        // Input data to DMC from memory.
-    (* keep *) input  logic        odd_or_even,
-    (* keep *) input  logic        DmaAck,         // 1 when DMC byte is on DmcData. DmcDmaRequested should go low.
-    (* keep *) output logic  [7:0] DOUT,           // Data from APU
-    (* keep *) output wire  [15:0] Sample,
-    (* keep *) output logic        DmaReq,         // 1 when DMC wants DMA
-    (* keep *) output logic [15:0] DmaAddr,        // Address DMC wants to read
-    (* keep *) output logic        IRQ,            // IRQ asserted high == asserted
+    input  logic        MMC5,
+    input  logic        clk,
+    input  logic        PHI2,
+    input  logic        ce,
+    input  logic        reset,
+    input  logic        cold_reset,
+    input  logic        allow_us,       // Set to 1 to allow ultrasonic frequencies
+    input  logic        PAL,
+    input  logic  [4:0] ADDR,           // APU Address Line
+    input  logic  [7:0] DIN,            // Data to APU
+    input  logic        RW,
+    input  logic        CS,
+    input  logic  [4:0] audio_channels, // Enabled audio channels
+    input  logic  [7:0] DmaData,        // Input data to DMC from memory.
+    input  logic        odd_or_even,
+    input  logic        DmaAck,         // 1 when DMC byte is on DmcData. DmcDmaRequested should go low.
+    output logic  [7:0] DOUT,           // Data from APU
+    output wire  [15:0] Sample,
+    output logic        DmaReq,         // 1 when DMC wants DMA
+    output logic [15:0] DmaAddr,        // Address DMC wants to read
+    output logic        IRQ,            // IRQ asserted high == asserted
     // Enhanced APU
-    (* keep *) input  logic        apu_enhanced_ce,
-    (* keep *) input  logic        apu_mapper_saturates,
-    (* keep *) output logic        o_ce
+    input  logic        apu_enhanced_ce,
+    input  logic        apu_mapper_saturates,
+    output logic        o_ce
     );
 
-(* keep *) reg apu_reg0A_is_3E = 0;
+reg apu_reg0A_is_3E = 0;
 always @(posedge clk) begin
     if ((ADDR[4:0] == 'h0A)&&(DIN[7:0] == 'h3E)) begin
         apu_reg0A_is_3E <= 1'b1;
@@ -1087,7 +1087,7 @@ always @(posedge clk) begin
     if(reset)
         apu_reg0A_is_3E <= 0;
 end
-(* keep *) reg apu_reg0B_is_00 = 0;
+reg apu_reg0B_is_00 = 0;
 always @(posedge clk) begin
     if ((ADDR[4:0] == 'h0B)&&(DIN[7:0] == 'h00)) begin
         apu_reg0B_is_00 <= 1'b1;
@@ -1102,7 +1102,7 @@ end
 
 
 
-(* keep *) reg [15:0] sample_reg;
+reg [15:0] sample_reg;
 initial sample_reg = 'h0;
 always_ff @(posedge clk) begin
         sample_reg <= sample_wire;
@@ -1167,14 +1167,14 @@ assign Sample = sample_reg;
     // aclk1_d  -- Aclk1, except delayed by 1 cpu cycle exactly. Drives he half/quarter signals and len counter
     // aclk2    -- Aligned with CPU phi2, also every other frame
     // write    -- Happens on CPU phi2 (Not M2!). Most of these are latched by one of the above clocks.
-    (* keep *) logic aclk1, aclk2, aclk1_delayed, phi1; /* synthesis syn_keep=1 */ 
+    logic aclk1, aclk2, aclk1_delayed, phi1; /* synthesis syn_keep=1 */ 
     // assign aclk1 = (ce)&(odd_or_even);              // Defined as the cpu tick when the frame counter increases
     assign aclk1 = (odd_or_even);              // Defined as the cpu tick when the frame counter increases
     assign aclk2 = phi2_ce & ~odd_or_even;          // Tick on odd cycles, not 50% duty cycle so it covers 2 cpu cycles
     assign aclk1_delayed = ce & ~odd_or_even;       // Ticks 1 cpu cycle after frame counter
     assign phi1 = ce;
 
-    (* keep *) logic [4:0] Enabled;
+    logic [4:0] Enabled;
     logic [3:0] Sq1Sample,Sq2Sample,TriSample,NoiSample;
     logic [4:0] TriSample_enhanced;
     logic [6:0] DmcSample;
@@ -1194,7 +1194,7 @@ assign Sample = sample_reg;
     assign ApuMW5 = ADDR[4:2]==5; // Control registers
 
     logic Sq1NonZero, Sq2NonZero, TriNonZero, TriNonZero_enhanced, NoiNonZero;
-    (* keep *) logic ClkE, ClkL; /* synthesis syn_keep=1 */
+    logic ClkE, ClkL; /* synthesis syn_keep=1 */
 
     logic [4:0] enabled_buffer, enabled_buffer_1;
     assign Enabled = aclk1 ? enabled_buffer : enabled_buffer_1;
@@ -1219,7 +1219,7 @@ assign Sample = sample_reg;
         end
     end
 
-    (* keep *) logic frame_quarter, frame_half; /* synthesis syn_keep=1 */
+    logic frame_quarter, frame_half; /* synthesis syn_keep=1 */
     assign ClkE = ((frame_quarter)&(aclk1_delayed));
     assign ClkL = ((frame_half)&(aclk1_delayed));
 
@@ -1354,7 +1354,7 @@ assign Sample = sample_reg;
         .square1      (Sq1Sample),
         .square2      (Sq2Sample),
         .noise        (NoiSample),
-        (* keep *) .triangle     (TriSample),
+        .triangle     (TriSample),
         .dmc          (DmcSample),
         .sample       (sample_wire),
         // Enhanced APU
