@@ -1373,63 +1373,7 @@ module APUMixer (
 // Note: The original non-linear pulse_lut has been removed.
 // Square waves are now mixed with a simple linear sum.
 // An input of '0' results in an 'OFF' state for the channel.
-
-reg [5:0] tri_lut[0:15];
-initial begin
-    tri_lut[0] = 6'h00;
-    tri_lut[1] = 6'h04;
-    tri_lut[2] = 6'h08;
-    tri_lut[3] = 6'h0C;
-    tri_lut[4] = 6'h10;
-    tri_lut[5] = 6'h14;
-    tri_lut[6] = 6'h18;
-    tri_lut[7] = 6'h1C;
-    tri_lut[8] = 6'h20;
-    tri_lut[9] = 6'h24;
-    tri_lut[10] = 6'h28;
-    tri_lut[11] = 6'h2C;
-    tri_lut[12] = 6'h30;
-    tri_lut[13] = 6'h34;
-    tri_lut[14] = 6'h38;
-    tri_lut[15] = 6'h3C;
-end
-
-// Enhanced APU
-reg [5:0] tri_lut_enhanced_5b[0:31];
-initial begin
-    tri_lut_enhanced_5b[0] = 6'h00;
-    tri_lut_enhanced_5b[1] = 6'h01;
-    tri_lut_enhanced_5b[2] = 6'h02;
-    tri_lut_enhanced_5b[3] = 6'h04;
-    tri_lut_enhanced_5b[4] = 6'h06;
-    tri_lut_enhanced_5b[5] = 6'h08;
-    tri_lut_enhanced_5b[6] = 6'h0A;
-    tri_lut_enhanced_5b[7] = 6'h0C;
-    tri_lut_enhanced_5b[8] = 6'h0E;
-    tri_lut_enhanced_5b[9] = 6'h10;
-    tri_lut_enhanced_5b[10] = 6'h12;
-    tri_lut_enhanced_5b[11] = 6'h14;
-    tri_lut_enhanced_5b[12] = 6'h16;
-    tri_lut_enhanced_5b[13] = 6'h18;
-    tri_lut_enhanced_5b[14] = 6'h1A;
-    tri_lut_enhanced_5b[15] = 6'h1C;
-    tri_lut_enhanced_5b[16] = 6'h1E;
-    tri_lut_enhanced_5b[17] = 6'h20;
-    tri_lut_enhanced_5b[18] = 6'h22;
-    tri_lut_enhanced_5b[19] = 6'h24;
-    tri_lut_enhanced_5b[20] = 6'h26;
-    tri_lut_enhanced_5b[21] = 6'h28;
-    tri_lut_enhanced_5b[22] = 6'h2A;
-    tri_lut_enhanced_5b[23] = 6'h2C;
-    tri_lut_enhanced_5b[24] = 6'h2E;
-    tri_lut_enhanced_5b[25] = 6'h30;
-    tri_lut_enhanced_5b[26] = 6'h32;
-    tri_lut_enhanced_5b[27] = 6'h34;
-    tri_lut_enhanced_5b[28] = 6'h36;
-    tri_lut_enhanced_5b[29] = 6'h38;
-    tri_lut_enhanced_5b[30] = 6'h3A;
-    tri_lut_enhanced_5b[31] = 6'h3C;
-end
+// The triangle wave logic has been simplified to use linear scaling instead of lookup tables.
 
 reg [5:0] noise_lut[0:15];
 initial begin
@@ -1596,7 +1540,7 @@ wire [15:0] ch1_output = {12'b0, square1} + {12'b0, square2};
 
 // Normal mixer path (now combinatorial linear)
 // Widen smaller channel outputs to 16 bits for addition
-wire [15:0] tri_normal_output_scaled = {10'b0, tri_lut[triangle]};
+wire [15:0] tri_normal_output_scaled = {10'b0, triangle << 2};
 wire [15:0] noise_output_scaled = {10'b0, noise_lut[noise]};
 wire [15:0] dmc_output_scaled = {8'b0, dmc_lut[dmc]};
 
@@ -1604,8 +1548,8 @@ wire [15:0] dmc_output_scaled = {8'b0, dmc_lut[dmc]};
 wire [15:0] sample_normal_linear = ch1_output + tri_normal_output_scaled + noise_output_scaled + dmc_output_scaled;
 
 // Enhanced mixer path (combinatorial linear with enhanced triangle)
-// Use the enhanced triangle lookup table
-wire [15:0] tri_enhanced_output_scaled = {10'b0, tri_lut_enhanced_5b[apu_triangle_enhanced]};
+// Use a linear approximation for the enhanced triangle
+wire [15:0] tri_enhanced_output_scaled = {10'b0, apu_triangle_enhanced << 1};
 
 // Sum all channels for the enhanced linear mixer output
 wire [15:0] sample_enhanced_linear = ch1_output + tri_enhanced_output_scaled + noise_output_scaled + dmc_output_scaled;
