@@ -182,7 +182,7 @@ wire [7:0] apu_dout;
     //     endcase
     // end
     // assign data_out = data_out_reg;
-    assign data_out = 'h0
+    assign data_out = 'h0;
 
     // All reads complete in 1 clock
     assign data_ready = 1;
