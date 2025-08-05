@@ -139,40 +139,40 @@ module tqvp_fjpolo_rv2a03 (
 
 
 
-    wire apu_wr_signal_RVdomain = (data_write_n == 2'b10) ? 1'b1 :     
-                                  (data_write_n == 2'b01) ? 1'b1 :     
-                                  (data_write_n == 2'b00) ? 1'b1 :     
-                                  1'b0;                    
+    // wire apu_wr_signal_RVdomain = (data_write_n == 2'b10) ? 1'b1 :     
+    //                               (data_write_n == 2'b01) ? 1'b1 :     
+    //                               (data_write_n == 2'b00) ? 1'b1 :     
+    //                               1'b0;                    
 
-    wire apu_rw_signal_RVdomain = (data_read_n == 2'b10) ? 1'b1 :     
-                                  (data_read_n == 2'b01) ? 1'b1 :     
-                                  (data_read_n == 2'b00) ? 1'b1 :     
-                                  1'b0;        
+    // wire apu_rw_signal_RVdomain = (data_read_n == 2'b10) ? 1'b1 :     
+    //                               (data_read_n == 2'b01) ? 1'b1 :     
+    //                               (data_read_n == 2'b00) ? 1'b1 :     
+    //                               1'b0;        
 
-    wire apu_rw = (apu_wr_signal_RVdomain) ? 1'b0 : 1'b1;
-    APU apu(
-        .MMC5(apu_is_mmc5),
-        .clk(clk),
-        .PHI2(apu_phi2_ce), // Pass the clock enable to PHI2
-        .ce(apu_ce),
-        .reset(~rst_n),
-        .cold_reset(~rst_n),
-        .allow_us(apu_us),
-        .ADDR(address[4:0]),
-        .DIN(data_in[7:0]),
-        .RW(apu_rw), 
-        .CS(apu_cs),
-        .audio_channels(apu_audio_channels),
-        .DmaData(),       
-        .odd_or_even(odd_or_even),
-        .DmaAck(),        
-        .DOUT(apu_dout),
-        .Sample(apu_output_sample_16b),
-        .DmaReq(),        
-        .DmaAddr(),       
-        .IRQ(apu_IRQ),
-        .o_ce(apu_o_ce)
-    );
+    // wire apu_rw = (apu_wr_signal_RVdomain) ? 1'b0 : 1'b1;
+    // APU apu(
+    //     .MMC5(apu_is_mmc5),
+    //     .clk(clk),
+    //     .PHI2(apu_phi2_ce), // Pass the clock enable to PHI2
+    //     .ce(apu_ce),
+    //     .reset(~rst_n),
+    //     .cold_reset(~rst_n),
+    //     .allow_us(apu_us),
+    //     .ADDR(address[4:0]),
+    //     .DIN(data_in[7:0]),
+    //     .RW(apu_rw), 
+    //     .CS(apu_cs),
+    //     .audio_channels(apu_audio_channels),
+    //     .DmaData(),       
+    //     .odd_or_even(odd_or_even),
+    //     .DmaAck(),        
+    //     .DOUT(apu_dout),
+    //     .Sample(apu_output_sample_16b),
+    //     .DmaReq(),        
+    //     .DmaAddr(),       
+    //     .IRQ(apu_IRQ),
+    //     .o_ce(apu_o_ce)
+    // );
 
     // always @(posedge clk) begin
     //     if(!rst_n) begin
