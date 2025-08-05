@@ -87,33 +87,33 @@ module tqvp_fjpolo_rv2a03 (
 
     wire apu_cs = (address >= 'h00)&&(address < APU_FRAME_COUNTER_REG_ADDRESS);
 
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            div_cpu_cnt <= 4'd0;
-            div_ppu_cnt <= 2'd0;
-            div_sys     <= 2'd0;
-            odd_or_even <= 1'b1;
-        end else begin
-            div_cpu_cnt <= cpu_ce ? 4'd0 : div_cpu_cnt + 4'd1;
-            div_ppu_cnt <= ppu_ce ? 2'd0 : div_ppu_cnt + 2'd1;
-            div_sys     <= div_sys + 2'd1;
+    // always @(posedge clk) begin
+    //     if (!rst_n) begin
+    //         div_cpu_cnt <= 4'd0;
+    //         div_ppu_cnt <= 2'd0;
+    //         div_sys     <= 2'd0;
+    //         odd_or_even <= 1'b1;
+    //     end else begin
+    //         div_cpu_cnt <= cpu_ce ? 4'd0 : div_cpu_cnt + 4'd1;
+    //         div_ppu_cnt <= ppu_ce ? 2'd0 : div_ppu_cnt + 2'd1;
+    //         div_sys     <= div_sys + 2'd1;
             
-            if (cpu_ce) 
-                odd_or_even <= ~odd_or_even;
-        end
-    end
+    //         if (cpu_ce) 
+    //             odd_or_even <= ~odd_or_even;
+    //     end
+    // end
 
-    wire apu_wr_signal_RVdomain = (data_write_n == 2'b10) ? 1'b1 :     
-                                  (data_write_n == 2'b01) ? 1'b1 :     
-                                  (data_write_n == 2'b00) ? 1'b1 :     
-                                  1'b0;                    
+    // wire apu_wr_signal_RVdomain = (data_write_n == 2'b10) ? 1'b1 :     
+    //                               (data_write_n == 2'b01) ? 1'b1 :     
+    //                               (data_write_n == 2'b00) ? 1'b1 :     
+    //                               1'b0;                    
 
-    wire apu_rw_signal_RVdomain = (data_read_n == 2'b10) ? 1'b1 :     
-                                  (data_read_n == 2'b01) ? 1'b1 :     
-                                  (data_read_n == 2'b00) ? 1'b1 :     
-                                  1'b0;                     
+    // wire apu_rw_signal_RVdomain = (data_read_n == 2'b10) ? 1'b1 :     
+    //                               (data_read_n == 2'b01) ? 1'b1 :     
+    //                               (data_read_n == 2'b00) ? 1'b1 :     
+    //                               1'b0;                     
 
-    wire apu_rw = (apu_wr_signal_RVdomain) ? 1'b0 : 1'b1;
+    // wire apu_rw = (apu_wr_signal_RVdomain) ? 1'b0 : 1'b1;
     
     // // The APU module should be modified to take a clock enable,
     // // rather than the derived clock signal.
