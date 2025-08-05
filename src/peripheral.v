@@ -153,15 +153,15 @@ module tqvp_fjpolo_rv2a03 (
     end
 
 
-    // wire apu_wr_signal_RVdomain = (data_write_n == 2'b10) ? 1'b1 :     
-    //                               (data_write_n == 2'b01) ? 1'b1 :     
-    //                               (data_write_n == 2'b00) ? 1'b1 :     
-    //                               1'b0;                    
+    wire apu_wr_signal_RVdomain = (data_write_n == 2'b10) ? 1'b1 :     
+                                  (data_write_n == 2'b01) ? 1'b1 :     
+                                  (data_write_n == 2'b00) ? 1'b1 :     
+                                  1'b0;                    
 
-    // wire apu_rw_signal_RVdomain = (data_read_n == 2'b10) ? 1'b1 :     
-    //                               (data_read_n == 2'b01) ? 1'b1 :     
-    //                               (data_read_n == 2'b00) ? 1'b1 :     
-    //                               1'b0;        
+    wire apu_rw_signal_RVdomain = (data_read_n == 2'b10) ? 1'b1 :     
+                                  (data_read_n == 2'b01) ? 1'b1 :     
+                                  (data_read_n == 2'b00) ? 1'b1 :     
+                                  1'b0;        
 
     // wire apu_rw = (apu_wr_signal_RVdomain) ? 1'b0 : 1'b1;
     // APU apu(
