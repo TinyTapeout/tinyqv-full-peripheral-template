@@ -141,17 +141,39 @@ module tqvp_fjpolo_rv2a03 (
 
 
 
+    APU apu(
+        .MMC5(apu_is_mmc5),
+        .clk(clk),
+        .PHI2(apu_phi2_ce), // Pass the clock enable to PHI2
+        .ce(apu_ce),
+        .reset(~rst_n),
+        .cold_reset(~rst_n),
+        .allow_us(apu_us),
+        .ADDR(address[4:0]),
+        .DIN(data_in[7:0]),
+        .RW(apu_rw), 
+        .CS(apu_cs),
+        .audio_channels(apu_audio_channels),
+        .DmaData(),       
+        .odd_or_even(odd_or_even),
+        .DmaAck(),        
+        .DOUT(apu_dout),
+        .Sample(apu_output_sample_16b),
+        .DmaReq(),        
+        .DmaAddr(),       
+        .IRQ(apu_IRQ),
+        .o_ce(apu_o_ce)
+    );
 
-
-    always @(posedge clk) begin
-        if(!rst_n) begin
-            reg_data_output_msb <= 8'h00;
-            reg_data_output_lsb <= 8'h00;
-        end else begin
-            reg_data_output_msb <= apu_output_sample_16b[15:8];
-            reg_data_output_lsb <= apu_output_sample_16b[7:0];
-        end
-    end
+    // always @(posedge clk) begin
+    //     if(!rst_n) begin
+    //         reg_data_output_msb <= 8'h00;
+    //         reg_data_output_lsb <= 8'h00;
+    //     end else begin
+    //         reg_data_output_msb <= apu_output_sample_16b[15:8];
+    //         reg_data_output_lsb <= apu_output_sample_16b[7:0];
+    //     end
+    // end
     
     // assign uo_out[7:5] = ui_in[7:5];
     // assign uo_out[4]   = apu_IRQ;
