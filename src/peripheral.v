@@ -157,7 +157,7 @@ module tqvp_fjpolo_rv2a03 (
     // assign uo_out[4]   = apu_IRQ;
     // assign uo_out[3]   = apu_phi2_clk; // The output pin is still the derived clock
     // assign uo_out[2:0] = ui_in[2:0];    
-    uo_out = ui_in;
+    assign uo_out = ui_in;
 
     integer i;
     always_ff @(posedge clk or negedge rst_n) begin
