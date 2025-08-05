@@ -60,7 +60,6 @@ module tqvp_fjpolo_rv2a03 (
 );
 
     wire [7:0] apu_dout;
-    wire apu_o_ce; // New wire to capture the clock enable from the APU
 
     localparam CONFIGURATION0_REG_ADDR = 6'h20;
     localparam STATUS1_REG_ADDR = 6'h22;
@@ -84,9 +83,10 @@ module tqvp_fjpolo_rv2a03 (
     initial reg_status0 = 8'h00;             
 
     wire apu_us = reg_configuration0[2];
+    wire apu_enhanced = 1'b0; // Hardcoded to 0
+    wire apu_mapper_saturates = reg_configuration0[5]; // New bit for mapper saturates
     wire apu_is_mmc5 = reg_configuration0[6];          // New bit for isMMC5
     
-    // Hardcoded apu_audio_channels to all 1s (5 channels)
     wire [4:0] apu_audio_channels = 5'b11111; 
 
     wire [7:0] apu_data_out;
@@ -161,20 +161,18 @@ module tqvp_fjpolo_rv2a03 (
         .DIN(data_in[7:0]),
         .RW(apu_rw), 
         .CS(apu_cs),
-        .audio_channels(apu_audio_channels),
+        .audio_channels(apu_audio_channels), // Now hardcoded
         .odd_or_even(odd_or_even),
         .DOUT(apu_dout),
         .Sample(apu_output_sample_16b),
-        .IRQ(apu_IRQ),
-        .o_ce(apu_o_ce)
+        .IRQ(apu_IRQ)
     );
 
-    // Correctly capture the APU sample when `o_ce` is high.
     always @(posedge clk) begin
         if(!rst_n) begin
             reg_data_output_msb <= 8'h00;
             reg_data_output_lsb <= 8'h00;
-        end else if (apu_o_ce) begin
+        end else begin
             reg_data_output_msb <= apu_output_sample_16b[15:8];
             reg_data_output_lsb <= apu_output_sample_16b[7:0];
         end
@@ -201,7 +199,7 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
     
-    always @(posedge clk) begin // Corrected 'cllk' to 'clk' in previous version, ensuring it's 'clk' here
+    always @(posedge clk) begin
         if (!rst_n) begin
             reg_configuration0 <= 0;
         end else begin
@@ -211,8 +209,6 @@ module tqvp_fjpolo_rv2a03 (
             end
         end
     end
-
-    // Removed reg_configuration1 always block
 
     always @(posedge clk) begin
         if (!rst_n) begin
@@ -228,7 +224,6 @@ module tqvp_fjpolo_rv2a03 (
     logic [31:0] data_out_reg;
     always_comb begin
         case (address)
-            // Removed direct APU register access (0x00-0x0F)
             CONFIGURATION0_REG_ADDR: data_out_reg           = {24'h0, reg_configuration0};
             STATUS1_REG_ADDR: data_out_reg                  = {24'h0, reg_status0};
             DATA_INPUT_REG_ADDR: data_out_reg               = {24'h0, reg_data_input};
@@ -262,4 +257,4 @@ module tqvp_fjpolo_rv2a03 (
 
     wire _unused = &{data_read_n, data_ready, user_interrupt, 1'b0};
 
-endmodule 
+endmodule
