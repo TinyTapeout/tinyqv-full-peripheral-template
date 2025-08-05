@@ -160,27 +160,29 @@ wire [7:0] apu_dout;
     // The bottom 8 bits of the stored data are added to ui_in and output to uo_out.
     assign uo_out = example_data[7:0] + ui_in;
 
-    reg [31:0] data_out_reg;
-    always_comb begin
-        case (address)
-            6'h00: data_out_reg                         = {24'h0, reg_apu[0]};
-            CONFIGURATION0_REG_ADDR: data_out_reg       = {24'h0, reg_configuration0};
-            CONFIGURATION1_REG_ADDR: data_out_reg       = {24'h0, reg_configuration1};
-            STATUS1_REG_ADDR: data_out_reg              = {24'h0, reg_status0};
-            DATA_INPUT_REG_ADDR: data_out_reg           = {24'h0, reg_data_input};
-            DATA_OUTPUT_MSB_REG_ADDR: data_out_reg      = {24'h0, reg_data_output_msb};
-            DATA_OUTPUT_LSB_REG_ADDR: data_out_reg      = {24'h0, reg_data_output_lsb};
-            APU_STATUS_REG_ADDRESS: data_out_reg        = {24'h0, apu_dout};
-            APU_FRAME_COUNTER_REG_ADDRESS: data_out_reg     = {24'h0, apu_dout};
-            default: begin
-                if ((address >= 6'h00)&&(address < 6'h20)) begin
-                    data_out_reg = {24'h0, reg_apu[address]};
-                end else begin
-                    data_out_reg = 32'h0;
-                end
-            end
-        endcase
-    end
+    // reg [31:0] data_out_reg;
+    // always_comb begin
+    //     case (address)
+    //         6'h00: data_out_reg                         = {24'h0, reg_apu[0]};
+    //         CONFIGURATION0_REG_ADDR: data_out_reg       = {24'h0, reg_configuration0};
+    //         CONFIGURATION1_REG_ADDR: data_out_reg       = {24'h0, reg_configuration1};
+    //         STATUS1_REG_ADDR: data_out_reg              = {24'h0, reg_status0};
+    //         DATA_INPUT_REG_ADDR: data_out_reg           = {24'h0, reg_data_input};
+    //         DATA_OUTPUT_MSB_REG_ADDR: data_out_reg      = {24'h0, reg_data_output_msb};
+    //         DATA_OUTPUT_LSB_REG_ADDR: data_out_reg      = {24'h0, reg_data_output_lsb};
+    //         APU_STATUS_REG_ADDRESS: data_out_reg        = {24'h0, apu_dout};
+    //         APU_FRAME_COUNTER_REG_ADDRESS: data_out_reg     = {24'h0, apu_dout};
+    //         default: begin
+    //             if ((address >= 6'h00)&&(address < 6'h20)) begin
+    //                 data_out_reg = {24'h0, reg_apu[address]};
+    //             end else begin
+    //                 data_out_reg = 32'h0;
+    //             end
+    //         end
+    //     endcase
+    // end
+    // assign data_out = data_out_reg;
+    assign data_out = 'h0
 
     // All reads complete in 1 clock
     assign data_ready = 1;
