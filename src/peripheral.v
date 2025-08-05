@@ -229,13 +229,12 @@ module tqvp_fjpolo_rv2a03 (
     always_comb begin
         case (address)
             // Removed direct APU register access (0x00-0x0F)
-            CONFIGURATION0_REG_ADDR: data_out_reg = {24'h0, reg_configuration0};
-            STATUS1_REG_ADDR: data_out_reg = {24'h0, reg_status0};
-            DATA_INPUT_REG_ADDR: data_out_reg = {24'h0, reg_data_input};
-            DATA_OUTPUT_MSB_REG_ADDR: data_out_reg = {24'h0, reg_data_output_msb};
-            DATA_OUTPUT_LSB_REG_ADDR: data_out_reg = {24'h0, reg_data_output_lsb};
-            APU_STATUS_REG_ADDRESS: data_out_reg = {24'h0, apu_dout};
-            APU_FRAME_COUNTER_REG_ADDRESS: data_out_reg = {24'h0, apu_dout}; // Assuming this also reads from apu_dout
+            CONFIGURATION0_REG_ADDR: data_out_reg           = {24'h0, reg_configuration0};
+            STATUS1_REG_ADDR: data_out_reg                  = {24'h0, reg_status0};
+            DATA_INPUT_REG_ADDR: data_out_reg               = {24'h0, reg_data_input};
+            DATA_OUTPUT_MSB_REG_ADDR: data_out_reg          = {24'h0, reg_data_output_msb};
+            DATA_OUTPUT_LSB_REG_ADDR: data_out_reg          = {24'h0, reg_data_output_lsb};
+            APU_STATUS_REG_ADDRESS: data_out_reg            = {24'h0, apu_dout};
             default: data_out_reg = 32'h0; // All other addresses return 0
         endcase
     end
