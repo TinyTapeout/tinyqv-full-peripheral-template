@@ -70,7 +70,7 @@ module tqvp_fjpolo_rv2a03 (
     output        user_interrupt  // Dedicated interrupt request for this peripheral
 );
 
-wire [7:0] apu_dout;
+    wire [7:0] apu_dout;
     wire apu_o_ce; // New wire to capture the clock enable from the APU
 
     localparam CONFIGURATION0_REG_ADDR = 6'h20;
@@ -182,14 +182,37 @@ wire [7:0] apu_dout;
     //     endcase
     // end
     // assign data_out = data_out_reg;
-    assign data_out =   (address < 6'h15)                       ? {24'h0, reg_apu[0]} :
-                        (address == CONFIGURATION0_REG_ADDR)    ? {24'h0, reg_configuration0} :
-                        (address == CONFIGURATION1_REG_ADDR)    ? {24'h0, reg_configuration1} :
-                        (address == STATUS1_REG_ADDR)           ? {24'h0, reg_configuration1} :
-                        (address == DATA_INPUT_REG_ADDR)        ? {24'h0, reg_data_input} :
-                        (address == DATA_OUTPUT_MSB_REG_ADDR)   ? {24'h0, reg_data_output_msb} :
-                        (address == DATA_OUTPUT_LSB_REG_ADDR)   ? {24'h0, reg_data_output_lsb} :
-                        (address == APU_STATUS_REG_ADDRESS)     ? {24'h0, apu_dout} :
+    assign data_out =   (address == 6'h00)                      ? {24'h0, reg_apu[0]} :
+                        (address == 6'h01)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h02)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h03)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h04)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h04)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h05)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h06)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h07)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h08)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h09)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h0A)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h0B)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h0C)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h0D)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h0E)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h0F)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h11)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h12)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h13)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h14)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h15)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h16)                      ? {24'h0, reg_apu[1]} :
+                        (address == 6'h17)                      ? {24'h0, reg_apu[1]} :
+                        // (address == CONFIGURATION0_REG_ADDR)    ? {24'h0, reg_configuration0} :
+                        // (address == CONFIGURATION1_REG_ADDR)    ? {24'h0, reg_configuration1} :
+                        // (address == STATUS1_REG_ADDR)           ? {24'h0, reg_configuration1} :
+                        // (address == DATA_INPUT_REG_ADDR)        ? {24'h0, reg_data_input} :
+                        // (address == DATA_OUTPUT_MSB_REG_ADDR)   ? {24'h0, reg_data_output_msb} :
+                        // (address == DATA_OUTPUT_LSB_REG_ADDR)   ? {24'h0, reg_data_output_lsb} :
+                        // (address == APU_STATUS_REG_ADDRESS)     ? {24'h0, apu_dout} :
                         'h0;
 
     // All reads complete in 1 clock
