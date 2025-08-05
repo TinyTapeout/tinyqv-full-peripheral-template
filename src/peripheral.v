@@ -143,21 +143,20 @@ module tqvp_fjpolo_rv2a03 (
 
 
 
-
-
-    // Implement a 32-bit read/write register at address 0
-    reg [31:0] example_data;
     always @(posedge clk) begin
-        if (!rst_n) begin
-            example_data <= 0;
+        if(!rst_n) begin
+            reg_data_output_msb <= 8'h00;
+            reg_data_output_lsb <= 8'h00;
         end else begin
-            if (address == 6'h0) begin
-                if (data_write_n != 2'b11)              example_data[7:0]   <= data_in[7:0];
-                if (data_write_n[1] != data_write_n[0]) example_data[15:8]  <= data_in[15:8];
-                if (data_write_n == 2'b10)              example_data[31:16] <= data_in[31:16];
-            end
+            reg_data_output_msb <= apu_output_sample_16b[15:8];
+            reg_data_output_lsb <= apu_output_sample_16b[7:0];
         end
     end
+    
+    assign uo_out[7:5] = ui_in[7:5];
+    assign uo_out[4]   = apu_IRQ;
+    assign uo_out[3]   = apu_phi2_clk; // The output pin is still the derived clock
+    assign uo_out[2:0] = ui_in[2:0];    
 
     integer i;
     always_ff @(posedge clk or negedge rst_n) begin
@@ -204,9 +203,6 @@ module tqvp_fjpolo_rv2a03 (
             end
         end
     end
-
-    // The bottom 8 bits of the stored data are added to ui_in and output to uo_out.
-    assign uo_out = ui_in;
 
     assign data_out =   (address == 6'h00)                      ? {24'h0, reg_apu[0]} :
                         (address == 6'h01)                      ? {24'h0, reg_apu[1]} :
