@@ -169,13 +169,9 @@ module tqvp_fjpolo_rv2a03 (
         .RW(apu_rw), 
         .CS(apu_cs),
         .audio_channels(apu_audio_channels),
-        .DmaData(),       
         .odd_or_even(odd_or_even),
-        .DmaAck(),        
         .DOUT(apu_dout),
         .Sample(apu_output_sample_16b),
-        .DmaReq(),        
-        .DmaAddr(),       
         .IRQ(apu_IRQ),
         .o_ce(apu_o_ce)
     );
@@ -191,10 +187,11 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
     
-    assign uo_out[7:5] = ui_in[7:5];
-    assign uo_out[4]   = apu_IRQ;
-    assign uo_out[3]   = apu_phi2_clk; // The output pin is still the derived clock
-    assign uo_out[2:0] = ui_in[2:0];                
+    // assign uo_out[7:5] = ui_in[7:5];
+    // assign uo_out[4]   = apu_IRQ;
+    // assign uo_out[3]   = apu_phi2_clk; // The output pin is still the derived clock
+    // assign uo_out[2:0] = ui_in[2:0];                
+    assign uo_out = ui_in; 
 
     integer i;
     always_ff @(posedge clk or negedge rst_n) begin
@@ -244,15 +241,38 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
 
-    assign data_out =   (address < 6'h15)                       ? {24'h0, reg_apu[address]} :
-                        (address == CONFIGURATION0_REG_ADDR)    ? {24'h0, reg_configuration0} :
-                        (address == CONFIGURATION1_REG_ADDR)    ? {24'h0, reg_configuration1} :
-                        (address == STATUS1_REG_ADDR)           ? {24'h0, reg_configuration1} :
-                        (address == DATA_INPUT_REG_ADDR)        ? {24'h0, reg_data_input} :
-                        (address == DATA_OUTPUT_MSB_REG_ADDR)   ? {24'h0, reg_data_output_msb} :
-                        (address == DATA_OUTPUT_LSB_REG_ADDR)   ? {24'h0, reg_data_output_lsb} :
-                        (address == APU_STATUS_REG_ADDRESS)     ? {24'h0, apu_dout} :
-                        'h0;
+    // assign data_out =   (address < 6'h15)                       ? {24'h0, reg_apu[address]} :
+    //                     (address == CONFIGURATION0_REG_ADDR)    ? {24'h0, reg_configuration0} :
+    //                     (address == CONFIGURATION1_REG_ADDR)    ? {24'h0, reg_configuration1} :
+    //                     (address == STATUS1_REG_ADDR)           ? {24'h0, reg_configuration1} :
+    //                     (address == DATA_INPUT_REG_ADDR)        ? {24'h0, reg_data_input} :
+    //                     (address == DATA_OUTPUT_MSB_REG_ADDR)   ? {24'h0, reg_data_output_msb} :
+    //                     (address == DATA_OUTPUT_LSB_REG_ADDR)   ? {24'h0, reg_data_output_lsb} :
+    //                     (address == APU_STATUS_REG_ADDRESS)     ? {24'h0, apu_dout} :
+    //                     'h0;
+
+    logic [31:0] data_out_reg;
+    always_comb begin
+        case (address)
+            6'h00: data_out_reg = {24'h0, reg_apu[0]};
+            CONFIGURATION0_REG_ADDR: data_out_reg = {24'h0, reg_configuration0};
+            CONFIGURATION1_REG_ADDR: data_out_reg = {24'h0, reg_configuration1};
+            STATUS1_REG_ADDR: data_out_reg = {24'h0, reg_status0};
+            DATA_INPUT_REG_ADDR: data_out_reg = {24'h0, reg_data_input};
+            DATA_OUTPUT_MSB_REG_ADDR: data_out_reg = {24'h0, reg_data_output_msb};
+            DATA_OUTPUT_LSB_REG_ADDR: data_out_reg = {24'h0, reg_data_output_lsb};
+            APU_STATUS_REG_ADDRESS: data_out_reg = {24'h0, apu_dout};
+            APU_FRAME_COUNTER_REG_ADDRESS: data_out_reg = {24'h0, apu_dout};
+            default: begin
+                if (address >= 6'h00 && address < 6'h20) begin
+                    data_out_reg = {24'h0, reg_apu[address]};
+                end else begin
+                    data_out_reg = 32'h0;
+                end
+            end
+        endcase
+    end
+    assign data_out = data_out_reg;
 
     assign data_ready = 1;
     
@@ -274,6 +294,6 @@ module tqvp_fjpolo_rv2a03 (
 
     assign user_interrupt = example_interrupt;
 
-    wire _unused = &{data_read_n, 1'b0};
+    wire _unused = &{data_read_n, data_ready, user_interrupt, 1'b0};
 
 endmodule

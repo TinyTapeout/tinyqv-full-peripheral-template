@@ -799,9 +799,7 @@ module APU (
     logic [4:0] Enabled;
     logic [3:0] Sq1Sample,Sq2Sample,TriSample,NoiSample;
     logic [4:0] TriSample_enhanced;
-    logic [6:0] DmcSample;
-    logic DmcIrq;
-    logic IsDmcActive;
+    logic DmcIrq = 1'b0;
 
     logic irq_flag;
     logic frame_irq;
@@ -837,7 +835,7 @@ module APU (
 
 
     // Generate bus output
-    assign DOUT = {DmcIrq, irq_flag, 1'b0, IsDmcActive, NoiNonZero, TriNonZero, Sq2NonZero, Sq1NonZero};
+    assign DOUT = {DmcIrq, irq_flag, 1'b0, 1'b0, NoiNonZero, TriNonZero, Sq2NonZero, Sq1NonZero};
     assign IRQ = frame_irq || DmcIrq;
 
     // Generate each channel
@@ -927,7 +925,7 @@ module APU (
         .square2        (Sq2Sample),
         .noise          (NoiSample),
         .triangle       (TriSample),
-        .dmc            (DmcSample),
+        .dmc            (),
         .sample         (Sample)
     );
 
