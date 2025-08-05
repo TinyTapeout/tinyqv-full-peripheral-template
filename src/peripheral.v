@@ -157,7 +157,6 @@ module tqvp_fjpolo_rv2a03 (
     assign uo_out[3]   = apu_phi2_clk; // The output pin is still the derived clock
     assign uo_out[2:0] = ui_in[2:0];                
 
-    // ... (rest of your top-level module is unchanged) ...
     integer i;
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
