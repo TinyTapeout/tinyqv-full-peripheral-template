@@ -136,32 +136,32 @@ module tqvp_fjpolo_rv2a03 (
     wire apu_cs = (address >= 'h00)&&(address < APU_FRAME_COUNTER_REG_ADDRESS);
 
 
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            div_cpu_cnt <= 4'd0;
-            div_ppu_cnt <= 2'd0;
-            div_sys     <= 2'd0;
-            odd_or_even <= 1'b1;
-        end else begin
-            div_cpu_cnt <= cpu_ce ? 4'd0 : div_cpu_cnt + 4'd1;
-            div_ppu_cnt <= ppu_ce ? 2'd0 : div_ppu_cnt + 2'd1;
-            div_sys     <= div_sys + 2'd1;
+    // always @(posedge clk) begin
+    //     if (!rst_n) begin
+    //         div_cpu_cnt <= 4'd0;
+    //         div_ppu_cnt <= 2'd0;
+    //         div_sys     <= 2'd0;
+    //         odd_or_even <= 1'b1;
+    //     end else begin
+    //         div_cpu_cnt <= cpu_ce ? 4'd0 : div_cpu_cnt + 4'd1;
+    //         div_ppu_cnt <= ppu_ce ? 2'd0 : div_ppu_cnt + 2'd1;
+    //         div_sys     <= div_sys + 2'd1;
             
-            if (cpu_ce) 
-                odd_or_even <= ~odd_or_even;
-        end
-    end
+    //         if (cpu_ce) 
+    //             odd_or_even <= ~odd_or_even;
+    //     end
+    // end
 
 
-    wire apu_wr_signal_RVdomain = (data_write_n == 2'b10) ? 1'b1 :     
-                                  (data_write_n == 2'b01) ? 1'b1 :     
-                                  (data_write_n == 2'b00) ? 1'b1 :     
-                                  1'b0;                    
+    // wire apu_wr_signal_RVdomain = (data_write_n == 2'b10) ? 1'b1 :     
+    //                               (data_write_n == 2'b01) ? 1'b1 :     
+    //                               (data_write_n == 2'b00) ? 1'b1 :     
+    //                               1'b0;                    
 
-    wire apu_rw_signal_RVdomain = (data_read_n == 2'b10) ? 1'b1 :     
-                                  (data_read_n == 2'b01) ? 1'b1 :     
-                                  (data_read_n == 2'b00) ? 1'b1 :     
-                                  1'b0;        
+    // wire apu_rw_signal_RVdomain = (data_read_n == 2'b10) ? 1'b1 :     
+    //                               (data_read_n == 2'b01) ? 1'b1 :     
+    //                               (data_read_n == 2'b00) ? 1'b1 :     
+    //                               1'b0;        
 
     wire apu_rw = (apu_wr_signal_RVdomain) ? 1'b0 : 1'b1;
     APU apu(
@@ -184,123 +184,123 @@ module tqvp_fjpolo_rv2a03 (
         .o_ce(apu_o_ce)
     );
 
-    // always @(posedge clk) begin
-    //     if(!rst_n) begin
-    //         reg_data_output_msb <= 8'h00;
-    //         reg_data_output_lsb <= 8'h00;
+    // // always @(posedge clk) begin
+    // //     if(!rst_n) begin
+    // //         reg_data_output_msb <= 8'h00;
+    // //         reg_data_output_lsb <= 8'h00;
+    // //     end else begin
+    // //         reg_data_output_msb <= apu_output_sample_16b[15:8];
+    // //         reg_data_output_lsb <= apu_output_sample_16b[7:0];
+    // //     end
+    // // end
+    
+    // // assign uo_out[7:5] = ui_in[7:5];
+    // // assign uo_out[4]   = apu_IRQ;
+    // // assign uo_out[3]   = apu_phi2_clk; // The output pin is still the derived clock
+    // // assign uo_out[2:0] = ui_in[2:0];    
+    // assign uo_out = ui_in;
+
+    // integer i;
+    // always_ff @(posedge clk or negedge rst_n) begin
+    //     if (!rst_n) begin
+    //         for (i = 0; i < APU_INTERNAL_REG_NUMBER; i = i + 1)
+    //             reg_apu[i] <= 8'h00;
     //     end else begin
-    //         reg_data_output_msb <= apu_output_sample_16b[15:8];
-    //         reg_data_output_lsb <= apu_output_sample_16b[7:0];
+    //         if (data_write_n == 2'b00) begin
+    //             if (address < APU_INTERNAL_LAST_REG)
+    //                 reg_apu[address[4:0]] <= data_in[7:0];
+    //         end
     //     end
     // end
     
-    // assign uo_out[7:5] = ui_in[7:5];
-    // assign uo_out[4]   = apu_IRQ;
-    // assign uo_out[3]   = apu_phi2_clk; // The output pin is still the derived clock
-    // assign uo_out[2:0] = ui_in[2:0];    
-    assign uo_out = ui_in;
+    // always @(posedge clk) begin
+    //     if (!rst_n) begin
+    //         reg_configuration0 <= 0;
+    //     end else begin
+    //         if (address == CONFIGURATION0_REG_ADDR[5:0]) begin
+    //             if (data_write_n != 2'b11)
+    //                 reg_configuration0 <= data_in[7:0];
+    //         end
+    //     end
+    // end
 
-    integer i;
-    always_ff @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            for (i = 0; i < APU_INTERNAL_REG_NUMBER; i = i + 1)
-                reg_apu[i] <= 8'h00;
-        end else begin
-            if (data_write_n == 2'b00) begin
-                if (address < APU_INTERNAL_LAST_REG)
-                    reg_apu[address[4:0]] <= data_in[7:0];
-            end
-        end
-    end
+    // always @(posedge clk) begin
+    //     if (!rst_n) begin
+    //         reg_configuration1 <= 0;
+    //     end else begin
+    //         if (address == CONFIGURATION1_REG_ADDR[5:0]) begin
+    //             if (data_write_n != 2'b11)
+    //                 reg_configuration1 <= data_in[7:0];
+    //         end
+    //     end
+    // end
+
+    // always @(posedge clk) begin
+    //     if (!rst_n) begin
+    //         reg_data_input <= 0;
+    //     end else begin
+    //         if (address == DATA_INPUT_REG_ADDR) begin
+    //             if (data_write_n != 2'b11)
+    //                 reg_data_input <= data_in[7:0];
+    //         end
+    //     end
+    // end
+
+    // assign data_out =   (address == 6'h00)                      ? {24'h0, reg_apu[0]} :
+    //                     (address == 6'h01)                      ? {24'h0, reg_apu[1]} :
+    //                     (address == 6'h02)                      ? {24'h0, reg_apu[2]} :
+    //                     (address == 6'h03)                      ? {24'h0, reg_apu[3]} :
+    //                     (address == 6'h04)                      ? {24'h0, reg_apu[4]} :
+    //                     (address == 6'h04)                      ? {24'h0, reg_apu[5]} :
+    //                     (address == 6'h05)                      ? {24'h0, reg_apu[6]} :
+    //                     (address == 6'h06)                      ? {24'h0, reg_apu[7]} :
+    //                     (address == 6'h07)                      ? {24'h0, reg_apu[8]} :
+    //                     (address == 6'h08)                      ? {24'h0, reg_apu[9]} :
+    //                     (address == 6'h09)                      ? {24'h0, reg_apu[10]} :
+    //                     (address == 6'h0A)                      ? {24'h0, reg_apu[11]} :
+    //                     (address == 6'h0B)                      ? {24'h0, reg_apu[12]} :
+    //                     (address == 6'h0C)                      ? {24'h0, reg_apu[13]} :
+    //                     (address == 6'h0D)                      ? {24'h0, reg_apu[14]} :
+    //                     (address == 6'h0E)                      ? {24'h0, reg_apu[15]} :
+    //                     (address == 6'h0F)                      ? {24'h0, reg_apu[16]} :
+    //                     (address == 6'h11)                      ? {24'h0, reg_apu[17]} :
+    //                     (address == 6'h12)                      ? {24'h0, reg_apu[18]} :
+    //                     (address == 6'h13)                      ? {24'h0, reg_apu[19]} :
+    //                     (address == 6'h14)                      ? {24'h0, reg_apu[20]} :
+    //                     (address == 6'h15)                      ? {24'h0, reg_apu[21]} :
+    //                     (address == 6'h16)                      ? {24'h0, reg_apu[22]} :
+    //                     (address == 6'h17)                      ? {24'h0, reg_apu[23]} :
+    //                     (address == CONFIGURATION0_REG_ADDR)    ? {24'h0, reg_configuration0} :
+    //                     (address == CONFIGURATION1_REG_ADDR)    ? {24'h0, reg_configuration1} :
+    //                     (address == STATUS1_REG_ADDR)           ? {24'h0, reg_configuration1} :
+    //                     (address == DATA_INPUT_REG_ADDR)        ? {24'h0, reg_data_input} :
+    //                     (address == DATA_OUTPUT_MSB_REG_ADDR)   ? {24'h0, reg_data_output_msb} :
+    //                     (address == DATA_OUTPUT_LSB_REG_ADDR)   ? {24'h0, reg_data_output_lsb} :
+    //                     // (address == APU_STATUS_REG_ADDRESS)     ? {24'h0, apu_dout} :
+    //                     'h0;
+
+    // // All reads complete in 1 clock
+    // assign data_ready = 1;
     
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            reg_configuration0 <= 0;
-        end else begin
-            if (address == CONFIGURATION0_REG_ADDR[5:0]) begin
-                if (data_write_n != 2'b11)
-                    reg_configuration0 <= data_in[7:0];
-            end
-        end
-    end
+    // // User interrupt is generated on rising edge of ui_in[6], and cleared by writing a 1 to the low bit of address 8.
+    // reg example_interrupt;
+    // reg last_ui_in_6;
 
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            reg_configuration1 <= 0;
-        end else begin
-            if (address == CONFIGURATION1_REG_ADDR[5:0]) begin
-                if (data_write_n != 2'b11)
-                    reg_configuration1 <= data_in[7:0];
-            end
-        end
-    end
+    // always @(posedge clk) begin
+    //     if (!rst_n) begin
+    //         example_interrupt <= 0;
+    //     end
 
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            reg_data_input <= 0;
-        end else begin
-            if (address == DATA_INPUT_REG_ADDR) begin
-                if (data_write_n != 2'b11)
-                    reg_data_input <= data_in[7:0];
-            end
-        end
-    end
+    //     if (ui_in[6] && !last_ui_in_6) begin
+    //         example_interrupt <= 1;
+    //     end else if (address == 6'h8 && data_write_n != 2'b11 && data_in[0]) begin
+    //         example_interrupt <= 0;
+    //     end
 
-    assign data_out =   (address == 6'h00)                      ? {24'h0, reg_apu[0]} :
-                        (address == 6'h01)                      ? {24'h0, reg_apu[1]} :
-                        (address == 6'h02)                      ? {24'h0, reg_apu[2]} :
-                        (address == 6'h03)                      ? {24'h0, reg_apu[3]} :
-                        (address == 6'h04)                      ? {24'h0, reg_apu[4]} :
-                        (address == 6'h04)                      ? {24'h0, reg_apu[5]} :
-                        (address == 6'h05)                      ? {24'h0, reg_apu[6]} :
-                        (address == 6'h06)                      ? {24'h0, reg_apu[7]} :
-                        (address == 6'h07)                      ? {24'h0, reg_apu[8]} :
-                        (address == 6'h08)                      ? {24'h0, reg_apu[9]} :
-                        (address == 6'h09)                      ? {24'h0, reg_apu[10]} :
-                        (address == 6'h0A)                      ? {24'h0, reg_apu[11]} :
-                        (address == 6'h0B)                      ? {24'h0, reg_apu[12]} :
-                        (address == 6'h0C)                      ? {24'h0, reg_apu[13]} :
-                        (address == 6'h0D)                      ? {24'h0, reg_apu[14]} :
-                        (address == 6'h0E)                      ? {24'h0, reg_apu[15]} :
-                        (address == 6'h0F)                      ? {24'h0, reg_apu[16]} :
-                        (address == 6'h11)                      ? {24'h0, reg_apu[17]} :
-                        (address == 6'h12)                      ? {24'h0, reg_apu[18]} :
-                        (address == 6'h13)                      ? {24'h0, reg_apu[19]} :
-                        (address == 6'h14)                      ? {24'h0, reg_apu[20]} :
-                        (address == 6'h15)                      ? {24'h0, reg_apu[21]} :
-                        (address == 6'h16)                      ? {24'h0, reg_apu[22]} :
-                        (address == 6'h17)                      ? {24'h0, reg_apu[23]} :
-                        (address == CONFIGURATION0_REG_ADDR)    ? {24'h0, reg_configuration0} :
-                        (address == CONFIGURATION1_REG_ADDR)    ? {24'h0, reg_configuration1} :
-                        (address == STATUS1_REG_ADDR)           ? {24'h0, reg_configuration1} :
-                        (address == DATA_INPUT_REG_ADDR)        ? {24'h0, reg_data_input} :
-                        (address == DATA_OUTPUT_MSB_REG_ADDR)   ? {24'h0, reg_data_output_msb} :
-                        (address == DATA_OUTPUT_LSB_REG_ADDR)   ? {24'h0, reg_data_output_lsb} :
-                        // (address == APU_STATUS_REG_ADDRESS)     ? {24'h0, apu_dout} :
-                        'h0;
+    //     last_ui_in_6 <= ui_in[6];
+    // end
 
-    // All reads complete in 1 clock
-    assign data_ready = 1;
-    
-    // User interrupt is generated on rising edge of ui_in[6], and cleared by writing a 1 to the low bit of address 8.
-    reg example_interrupt;
-    reg last_ui_in_6;
-
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            example_interrupt <= 0;
-        end
-
-        if (ui_in[6] && !last_ui_in_6) begin
-            example_interrupt <= 1;
-        end else if (address == 6'h8 && data_write_n != 2'b11 && data_in[0]) begin
-            example_interrupt <= 0;
-        end
-
-        last_ui_in_6 <= ui_in[6];
-    end
-
-    assign user_interrupt = example_interrupt;
+    // assign user_interrupt = example_interrupt;
 
     // List all unused inputs to prevent warnings
     // data_read_n is unused as none of our behaviour depends on whether
