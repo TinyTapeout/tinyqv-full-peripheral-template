@@ -81,8 +81,10 @@ module tqvp_fjpolo_rv2a03 (
     localparam DATA_OUTPUT_LSB_REG_ADDR = 6'h25;
     localparam APU_STATUS_REG_ADDRESS  = 6'h15;
     localparam APU_FRAME_COUNTER_REG_ADDRESS  = 6'h17;
+    localparam APU_INTERNAL_REG_NUMBER = 'h18;
+    localparam APU_INTERNAL_LAST_REG = 'h18;
 
-    reg [7:0] reg_apu [30:0];
+    reg [7:0] reg_apu [(APU_INTERNAL_REG_NUMBER-1):0];   //$00 to $18
     reg [7:0] reg_configuration0;
     reg [7:0] reg_configuration1;
     reg [7:0] reg_data_input;
@@ -156,6 +158,52 @@ module tqvp_fjpolo_rv2a03 (
             end
         end
     end
+
+    integer i;
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            for (i = 0; i < APU_INTERNAL_REG_NUMBER; i = i + 1)
+                reg_apu[i] <= 8'h00;
+        end else begin
+            if (data_write_n == 2'b00) begin
+                if (address < APU_INTERNAL_LAST_REG)
+                    reg_apu[address[4:0]] <= data_in[7:0];
+            end
+        end
+    end
+    
+    // always @(posedge clk) begin
+    //     if (!rst_n) begin
+    //         reg_configuration0 <= 0;
+    //     end else begin
+    //         if (address == CONFIGURATION0_REG_ADDR[5:0]) begin
+    //             if (data_write_n != 2'b11)
+    //                 reg_configuration0 <= data_in[7:0];
+    //         end
+    //     end
+    // end
+
+    // always @(posedge clk) begin
+    //     if (!rst_n) begin
+    //         reg_configuration1 <= 0;
+    //     end else begin
+    //         if (address == CONFIGURATION1_REG_ADDR[5:0]) begin
+    //             if (data_write_n != 2'b11)
+    //                 reg_configuration1 <= data_in[7:0];
+    //         end
+    //     end
+    // end
+
+    // always @(posedge clk) begin
+    //     if (!rst_n) begin
+    //         reg_data_input <= 0;
+    //     end else begin
+    //         if (address == DATA_INPUT_REG_ADDR) begin
+    //             if (data_write_n != 2'b11)
+    //                 reg_data_input <= data_in[7:0];
+    //         end
+    //     end
+    // end
 
     // The bottom 8 bits of the stored data are added to ui_in and output to uo_out.
     assign uo_out = ui_in;
