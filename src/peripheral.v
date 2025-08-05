@@ -163,7 +163,31 @@ module tqvp_fjpolo_rv2a03 (
                                   (data_read_n == 2'b00) ? 1'b1 :     
                                   1'b0;        
 
-    // wire apu_rw = (apu_wr_signal_RVdomain) ? 1'b0 : 1'b1;
+    wire apu_rw = (apu_wr_signal_RVdomain) ? 1'b0 : 1'b1;
+    APU apu(
+        .MMC5(),
+        .clk(clk),
+        .PHI2(apu_phi2_ce), // Pass the clock enable to PHI2
+        .ce(apu_ce),
+        .reset(~rst_n),
+        .cold_reset(~rst_n),
+        .allow_us(),
+        .ADDR(),
+        .DIN(),
+        .RW(), 
+        .CS(),
+        .audio_channels(),
+        .DmaData(),       
+        .odd_or_even(),
+        .DmaAck(),        
+        .DOUT(),
+        .Sample(),
+        .DmaReq(),        
+        .DmaAddr(),       
+        .IRQ(),
+        .o_ce()
+    );
+
     // APU apu(
     //     .MMC5(apu_is_mmc5),
     //     .clk(clk),
