@@ -207,12 +207,12 @@ module tqvp_fjpolo_rv2a03 (
                         (address == 6'h16)                      ? {24'h0, reg_apu[22]} :
                         (address == 6'h17)                      ? {24'h0, reg_apu[23]} :
                         (address == CONFIGURATION0_REG_ADDR)    ? {24'h0, reg_configuration0} :
-                        (address == CONFIGURATION1_REG_ADDR)    ? {24'h0, reg_configuration1} :
-                        (address == STATUS1_REG_ADDR)           ? {24'h0, reg_configuration1} :
-                        (address == DATA_INPUT_REG_ADDR)        ? {24'h0, reg_data_input} :
-                        (address == DATA_OUTPUT_MSB_REG_ADDR)   ? {24'h0, reg_data_output_msb} :
-                        (address == DATA_OUTPUT_LSB_REG_ADDR)   ? {24'h0, reg_data_output_lsb} :
-                        (address == APU_STATUS_REG_ADDRESS)     ? {24'h0, apu_dout} :
+                        // (address == CONFIGURATION1_REG_ADDR)    ? {24'h0, reg_configuration1} :
+                        // (address == STATUS1_REG_ADDR)           ? {24'h0, reg_configuration1} :
+                        // (address == DATA_INPUT_REG_ADDR)        ? {24'h0, reg_data_input} :
+                        // (address == DATA_OUTPUT_MSB_REG_ADDR)   ? {24'h0, reg_data_output_msb} :
+                        // (address == DATA_OUTPUT_LSB_REG_ADDR)   ? {24'h0, reg_data_output_lsb} :
+                        // (address == APU_STATUS_REG_ADDRESS)     ? {24'h0, apu_dout} :
                         'h0;
 
     // All reads complete in 1 clock
