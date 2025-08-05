@@ -182,7 +182,11 @@ wire [7:0] apu_dout;
     //     endcase
     // end
     // assign data_out = data_out_reg;
-    assign data_out = 'h0;
+    assign data_out =   (address == 6'h00)                      ? {24'h0, reg_apu[0]} :
+                        (address == CONFIGURATION0_REG_ADDR)    ? {24'h0, reg_configuration0} :
+                        (address == CONFIGURATION1_REG_ADDR)    ? {24'h0, reg_configuration1} :
+                        (address == STATUS1_REG_ADDR)           ? {24'h0, reg_configuration1} :
+                        'h0;
 
     // All reads complete in 1 clock
     assign data_ready = 1;
