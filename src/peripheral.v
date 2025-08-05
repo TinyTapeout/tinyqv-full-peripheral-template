@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 fjpolo
+ * Copyright (c) 2025 @fjpolo
  * SPDX-License-Identifier: Apache-2.0
  */
  // IO
@@ -10,10 +10,10 @@
  //     The inputs are synchronized to the clock, note this will introduce 2 cycles of delay on the inputs.
  //   - uo_out[0] to uo_out[7]: Output PMOD, only connected if this peripheral is selected.
  //      ⚠ Note that uo_out[0] is normally used for UART TX.
- //         +TODO: uo_out[1]: Audio PWM output Left Channel.
- //         +TODO: uo_out[2]: Audio PWM output Right Channel.
- //         +TODO: uo_out[3]: apu_phi2_clk - 21.477MHz.
- //         +TODO: uo_out[4]: apu_IRQ
+ //         +uo_out[1]: Audio PWM output Left Channel.
+ //         +uo_out[2]: Audio PWM output Right Channel.
+ //         +uo_out[3]: apu_phi2_clk - 21.477MHz.
+ //         +uo_out[4]: apu_IRQ
 
  // Memory Mapped Registers
  //
@@ -25,8 +25,8 @@
  //       | Enhanced APU |     |    |    | CS |    | US | CE |
  //
  //    0x21 - Configuration1 - Read/Write
- //       | b7                  | b6 | b5 | b4 | b3 | b2 |   b1   |          b0          |
- //       | PMOD PWM Out enable |    |    |    |    |    | isMMC5 | APU Mapper saturates |
+ //       | b7                  | b6 | b5 | b4 | b3 | b2 | b1 | b0 |
+ //       | PMOD PWM Out enable |  |  |  |  |  | isMMC5 | APU Mapper saturates |
  //
  //    0x22 - Status0 - Read
  //       | b7 |          b6        |        b5          |       b4           |          b3        |         b2         | b1  |         b0        |
@@ -44,30 +44,23 @@
 
 `default_nettype none
 
-// Change the name of this module to something that reflects its functionality and includes your name for uniqueness
-// For example tqvp_yourname_spi for an SPI peripheral.
-// Then edit tt_wrapper.v line 41 and change tqvp_example to your chosen module name.
 module tqvp_fjpolo_rv2a03 (
-    input         clk,          // Clock - the TinyQV project clock is normally set to 64MHz.
-    input         rst_n,        // Reset_n - low to reset.
+    input          clk,           // Clock - the TinyQV project clock is normally set to 64MHz.
+    input          rst_n,         // Reset_n - low to reset.
 
-    input  [7:0]  ui_in,        // The input PMOD, always available.  Note that ui_in[7] is normally used for UART RX.
-                                // The inputs are synchronized to the clock, note this will introduce 2 cycles of delay on the inputs.
+    input    [7:0] ui_in,         // The input PMOD, always available. Note that ui_in[7] is normally used for UART RX.
+    output   [7:0] uo_out,        // The output PMOD. Each wire is only connected if this peripheral is selected.
 
-    output [7:0]  uo_out,       // The output PMOD.  Each wire is only connected if this peripheral is selected.
-                                // Note that uo_out[0] is normally used for UART TX.
+    input    [5:0] address,       // Address within this peripheral's address space
+    input   [31:0] data_in,       // Data in to the peripheral, bottom 8, 16 or all 32 bits are valid on write.
 
-    input [5:0]   address,      // Address within this peripheral's address space
-    input [31:0]  data_in,      // Data in to the peripheral, bottom 8, 16 or all 32 bits are valid on write.
-
-    // Data read and write requests from the TinyQV core.
-    input [1:0]   data_write_n, // 11 = no write, 00 = 8-bits, 01 = 16-bits, 10 = 32-bits
-    input [1:0]   data_read_n,  // 11 = no read,  00 = 8-bits, 01 = 16-bits, 10 = 32-bits
+    input    [1:0] data_write_n,  // 11 = no write, 00 = 8-bits, 01 = 16-bits, 10 = 32-bits
+    input    [1:0] data_read_n,   // 11 = no read, 00 = 8-bits, 01 = 16-bits, 10 = 32-bits
     
-    output [31:0] data_out,     // Data out from the peripheral, bottom 8, 16 or all 32 bits are valid on read when data_ready is high.
-    output        data_ready,
+    output  [31:0] data_out,      // Data out from the peripheral
+    output         data_ready,
 
-    output        user_interrupt  // Dedicated interrupt request for this peripheral
+    output         user_interrupt // Dedicated interrupt request for this peripheral
 );
 
     wire [7:0] apu_dout;
@@ -81,10 +74,8 @@ module tqvp_fjpolo_rv2a03 (
     localparam DATA_OUTPUT_LSB_REG_ADDR = 6'h25;
     localparam APU_STATUS_REG_ADDRESS  = 6'h15;
     localparam APU_FRAME_COUNTER_REG_ADDRESS  = 6'h17;
-    localparam APU_INTERNAL_REG_NUMBER = 'h18;
-    localparam APU_INTERNAL_LAST_REG = 'h18;
 
-    reg [7:0] reg_apu [(APU_INTERNAL_REG_NUMBER-1):0];   //$00 to $18
+    reg [7:0] reg_apu [30:0];
     reg [7:0] reg_configuration0;
     reg [7:0] reg_configuration1;
     reg [7:0] reg_data_input;
@@ -135,23 +126,21 @@ module tqvp_fjpolo_rv2a03 (
 
     wire apu_cs = (address >= 'h00)&&(address < APU_FRAME_COUNTER_REG_ADDRESS);
 
-
-    // always @(posedge clk) begin
-    //     if (!rst_n) begin
-    //         div_cpu_cnt <= 4'd0;
-    //         div_ppu_cnt <= 2'd0;
-    //         div_sys     <= 2'd0;
-    //         odd_or_even <= 1'b1;
-    //     end else begin
-    //         div_cpu_cnt <= cpu_ce ? 4'd0 : div_cpu_cnt + 4'd1;
-    //         div_ppu_cnt <= ppu_ce ? 2'd0 : div_ppu_cnt + 2'd1;
-    //         div_sys     <= div_sys + 2'd1;
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            div_cpu_cnt <= 4'd0;
+            div_ppu_cnt <= 2'd0;
+            div_sys     <= 2'd0;
+            odd_or_even <= 1'b1;
+        end else begin
+            div_cpu_cnt <= cpu_ce ? 4'd0 : div_cpu_cnt + 4'd1;
+            div_ppu_cnt <= ppu_ce ? 2'd0 : div_ppu_cnt + 2'd1;
+            div_sys     <= div_sys + 2'd1;
             
-    //         if (cpu_ce) 
-    //             odd_or_even <= ~odd_or_even;
-    //     end
-    // end
-
+            if (cpu_ce) 
+                odd_or_even <= ~odd_or_even;
+        end
+    end
 
     wire apu_wr_signal_RVdomain = (data_write_n == 2'b10) ? 1'b1 :     
                                   (data_write_n == 2'b01) ? 1'b1 :     
@@ -161,9 +150,12 @@ module tqvp_fjpolo_rv2a03 (
     wire apu_rw_signal_RVdomain = (data_read_n == 2'b10) ? 1'b1 :     
                                   (data_read_n == 2'b01) ? 1'b1 :     
                                   (data_read_n == 2'b00) ? 1'b1 :     
-                                  1'b0;        
+                                  1'b0;                     
 
     wire apu_rw = (apu_wr_signal_RVdomain) ? 1'b0 : 1'b1;
+    
+    // The APU module should be modified to take a clock enable,
+    // rather than the derived clock signal.
     APU apu(
         .MMC5(apu_is_mmc5),
         .clk(clk),
@@ -177,134 +169,111 @@ module tqvp_fjpolo_rv2a03 (
         .RW(apu_rw), 
         .CS(apu_cs),
         .audio_channels(apu_audio_channels),
+        .DmaData(),       
         .odd_or_even(odd_or_even),
+        .DmaAck(),        
         .DOUT(apu_dout),
         .Sample(apu_output_sample_16b),
+        .DmaReq(),        
+        .DmaAddr(),       
         .IRQ(apu_IRQ),
         .o_ce(apu_o_ce)
     );
 
-    // // always @(posedge clk) begin
-    // //     if(!rst_n) begin
-    // //         reg_data_output_msb <= 8'h00;
-    // //         reg_data_output_lsb <= 8'h00;
-    // //     end else begin
-    // //         reg_data_output_msb <= apu_output_sample_16b[15:8];
-    // //         reg_data_output_lsb <= apu_output_sample_16b[7:0];
-    // //     end
-    // // end
+    // Correctly capture the APU sample when `o_ce` is high.
+    always @(posedge clk) begin
+        if(!rst_n) begin
+            reg_data_output_msb <= 8'h00;
+            reg_data_output_lsb <= 8'h00;
+        end else if (apu_o_ce) begin
+            reg_data_output_msb <= apu_output_sample_16b[15:8];
+            reg_data_output_lsb <= apu_output_sample_16b[7:0];
+        end
+    end
     
-    // // assign uo_out[7:5] = ui_in[7:5];
-    // // assign uo_out[4]   = apu_IRQ;
-    // // assign uo_out[3]   = apu_phi2_clk; // The output pin is still the derived clock
-    // // assign uo_out[2:0] = ui_in[2:0];    
-    // assign uo_out = ui_in;
+    assign uo_out[7:5] = ui_in[7:5];
+    assign uo_out[4]   = apu_IRQ;
+    assign uo_out[3]   = apu_phi2_clk; // The output pin is still the derived clock
+    assign uo_out[2:0] = ui_in[2:0];                
 
-    // integer i;
-    // always_ff @(posedge clk or negedge rst_n) begin
-    //     if (!rst_n) begin
-    //         for (i = 0; i < APU_INTERNAL_REG_NUMBER; i = i + 1)
-    //             reg_apu[i] <= 8'h00;
-    //     end else begin
-    //         if (data_write_n == 2'b00) begin
-    //             if (address < APU_INTERNAL_LAST_REG)
-    //                 reg_apu[address[4:0]] <= data_in[7:0];
-    //         end
-    //     end
-    // end
+    integer i;
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            for (i = 0; i <= 30; i = i + 1) begin
+                reg_apu[i] <= 8'h00;
+            end
+        end else begin
+            if (data_write_n == 2'b00) begin
+                if (address >= 6'h00 && address < 6'h20) begin
+                    reg_apu[address[4:0]] <= data_in[7:0];
+                end
+            end
+        end
+    end
     
-    // always @(posedge clk) begin
-    //     if (!rst_n) begin
-    //         reg_configuration0 <= 0;
-    //     end else begin
-    //         if (address == CONFIGURATION0_REG_ADDR[5:0]) begin
-    //             if (data_write_n != 2'b11)
-    //                 reg_configuration0 <= data_in[7:0];
-    //         end
-    //     end
-    // end
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            reg_configuration0 <= 0;
+        end else begin
+            if (address == CONFIGURATION0_REG_ADDR[5:0]) begin
+                if (data_write_n != 2'b11)
+                    reg_configuration0 <= data_in[7:0];
+            end
+        end
+    end
 
-    // always @(posedge clk) begin
-    //     if (!rst_n) begin
-    //         reg_configuration1 <= 0;
-    //     end else begin
-    //         if (address == CONFIGURATION1_REG_ADDR[5:0]) begin
-    //             if (data_write_n != 2'b11)
-    //                 reg_configuration1 <= data_in[7:0];
-    //         end
-    //     end
-    // end
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            reg_configuration1 <= 0;
+        end else begin
+            if (address == CONFIGURATION1_REG_ADDR[5:0]) begin
+                if (data_write_n != 2'b11)
+                    reg_configuration1 <= data_in[7:0];
+            end
+        end
+    end
 
-    // always @(posedge clk) begin
-    //     if (!rst_n) begin
-    //         reg_data_input <= 0;
-    //     end else begin
-    //         if (address == DATA_INPUT_REG_ADDR) begin
-    //             if (data_write_n != 2'b11)
-    //                 reg_data_input <= data_in[7:0];
-    //         end
-    //     end
-    // end
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            reg_data_input <= 0;
+        end else begin
+            if (address == DATA_INPUT_REG_ADDR) begin
+                if (data_write_n != 2'b11)
+                    reg_data_input <= data_in[7:0];
+            end
+        end
+    end
 
-    // assign data_out =   (address == 6'h00)                      ? {24'h0, reg_apu[0]} :
-    //                     (address == 6'h01)                      ? {24'h0, reg_apu[1]} :
-    //                     (address == 6'h02)                      ? {24'h0, reg_apu[2]} :
-    //                     (address == 6'h03)                      ? {24'h0, reg_apu[3]} :
-    //                     (address == 6'h04)                      ? {24'h0, reg_apu[4]} :
-    //                     (address == 6'h04)                      ? {24'h0, reg_apu[5]} :
-    //                     (address == 6'h05)                      ? {24'h0, reg_apu[6]} :
-    //                     (address == 6'h06)                      ? {24'h0, reg_apu[7]} :
-    //                     (address == 6'h07)                      ? {24'h0, reg_apu[8]} :
-    //                     (address == 6'h08)                      ? {24'h0, reg_apu[9]} :
-    //                     (address == 6'h09)                      ? {24'h0, reg_apu[10]} :
-    //                     (address == 6'h0A)                      ? {24'h0, reg_apu[11]} :
-    //                     (address == 6'h0B)                      ? {24'h0, reg_apu[12]} :
-    //                     (address == 6'h0C)                      ? {24'h0, reg_apu[13]} :
-    //                     (address == 6'h0D)                      ? {24'h0, reg_apu[14]} :
-    //                     (address == 6'h0E)                      ? {24'h0, reg_apu[15]} :
-    //                     (address == 6'h0F)                      ? {24'h0, reg_apu[16]} :
-    //                     (address == 6'h11)                      ? {24'h0, reg_apu[17]} :
-    //                     (address == 6'h12)                      ? {24'h0, reg_apu[18]} :
-    //                     (address == 6'h13)                      ? {24'h0, reg_apu[19]} :
-    //                     (address == 6'h14)                      ? {24'h0, reg_apu[20]} :
-    //                     (address == 6'h15)                      ? {24'h0, reg_apu[21]} :
-    //                     (address == 6'h16)                      ? {24'h0, reg_apu[22]} :
-    //                     (address == 6'h17)                      ? {24'h0, reg_apu[23]} :
-    //                     (address == CONFIGURATION0_REG_ADDR)    ? {24'h0, reg_configuration0} :
-    //                     (address == CONFIGURATION1_REG_ADDR)    ? {24'h0, reg_configuration1} :
-    //                     (address == STATUS1_REG_ADDR)           ? {24'h0, reg_configuration1} :
-    //                     (address == DATA_INPUT_REG_ADDR)        ? {24'h0, reg_data_input} :
-    //                     (address == DATA_OUTPUT_MSB_REG_ADDR)   ? {24'h0, reg_data_output_msb} :
-    //                     (address == DATA_OUTPUT_LSB_REG_ADDR)   ? {24'h0, reg_data_output_lsb} :
-    //                     // (address == APU_STATUS_REG_ADDRESS)     ? {24'h0, apu_dout} :
-    //                     'h0;
+    assign data_out =   (address < 6'h15)                       ? {24'h0, reg_apu[address]} :
+                        (address == CONFIGURATION0_REG_ADDR)    ? {24'h0, reg_configuration0} :
+                        (address == CONFIGURATION1_REG_ADDR)    ? {24'h0, reg_configuration1} :
+                        (address == STATUS1_REG_ADDR)           ? {24'h0, reg_configuration1} :
+                        (address == DATA_INPUT_REG_ADDR)        ? {24'h0, reg_data_input} :
+                        (address == DATA_OUTPUT_MSB_REG_ADDR)   ? {24'h0, reg_data_output_msb} :
+                        (address == DATA_OUTPUT_LSB_REG_ADDR)   ? {24'h0, reg_data_output_lsb} :
+                        (address == APU_STATUS_REG_ADDRESS)     ? {24'h0, apu_dout} :
+                        'h0;
 
-    // // All reads complete in 1 clock
-    // assign data_ready = 1;
+    assign data_ready = 1;
     
-    // // User interrupt is generated on rising edge of ui_in[6], and cleared by writing a 1 to the low bit of address 8.
-    // reg example_interrupt;
-    // reg last_ui_in_6;
+    reg example_interrupt;
+    reg last_ui_in_6;
 
-    // always @(posedge clk) begin
-    //     if (!rst_n) begin
-    //         example_interrupt <= 0;
-    //     end
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            example_interrupt <= 0;
+        end
 
-    //     if (ui_in[6] && !last_ui_in_6) begin
-    //         example_interrupt <= 1;
-    //     end else if (address == 6'h8 && data_write_n != 2'b11 && data_in[0]) begin
-    //         example_interrupt <= 0;
-    //     end
+        if (ui_in[6] && !last_ui_in_6) begin
+            example_interrupt <= 1;
+        end else if (address == 6'h8 && data_write_n != 2'b11 && data_in[0]) begin
+            example_interrupt <= 0;
+        end
+        last_ui_in_6 <= ui_in[6];
+    end
 
-    //     last_ui_in_6 <= ui_in[6];
-    // end
+    assign user_interrupt = example_interrupt;
 
-    // assign user_interrupt = example_interrupt;
-
-    // List all unused inputs to prevent warnings
-    // data_read_n is unused as none of our behaviour depends on whether
-    // registers are being read.
     wire _unused = &{data_read_n, 1'b0};
 
 endmodule
