@@ -10,10 +10,10 @@
  //     The inputs are synchronized to the clock, note this will introduce 2 cycles of delay on the inputs.
  //   - uo_out[0] to uo_out[7]: Output PMOD, only connected if this peripheral is selected.
  //      ⚠ Note that uo_out[0] is normally used for UART TX.
- //         +uo_out[1]: Audio PWM output Left Channel.
- //         +uo_out[2]: Audio PWM output Right Channel.
- //         +uo_out[3]: apu_phi2_clk - 21.477MHz.
- //         +uo_out[4]: apu_IRQ
+ //         +TODO: uo_out[1]: Audio PWM output Left Channel.
+ //         +TODO: uo_out[2]: Audio PWM output Right Channel.
+ //         +TODO: uo_out[3]: apu_phi2_clk - 21.477MHz.
+ //         +TODO: uo_out[4]: apu_IRQ
 
  // Memory Mapped Registers
  //
@@ -172,64 +172,42 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
     
-    // always @(posedge clk) begin
-    //     if (!rst_n) begin
-    //         reg_configuration0 <= 0;
-    //     end else begin
-    //         if (address == CONFIGURATION0_REG_ADDR[5:0]) begin
-    //             if (data_write_n != 2'b11)
-    //                 reg_configuration0 <= data_in[7:0];
-    //         end
-    //     end
-    // end
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            reg_configuration0 <= 0;
+        end else begin
+            if (address == CONFIGURATION0_REG_ADDR[5:0]) begin
+                if (data_write_n != 2'b11)
+                    reg_configuration0 <= data_in[7:0];
+            end
+        end
+    end
 
-    // always @(posedge clk) begin
-    //     if (!rst_n) begin
-    //         reg_configuration1 <= 0;
-    //     end else begin
-    //         if (address == CONFIGURATION1_REG_ADDR[5:0]) begin
-    //             if (data_write_n != 2'b11)
-    //                 reg_configuration1 <= data_in[7:0];
-    //         end
-    //     end
-    // end
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            reg_configuration1 <= 0;
+        end else begin
+            if (address == CONFIGURATION1_REG_ADDR[5:0]) begin
+                if (data_write_n != 2'b11)
+                    reg_configuration1 <= data_in[7:0];
+            end
+        end
+    end
 
-    // always @(posedge clk) begin
-    //     if (!rst_n) begin
-    //         reg_data_input <= 0;
-    //     end else begin
-    //         if (address == DATA_INPUT_REG_ADDR) begin
-    //             if (data_write_n != 2'b11)
-    //                 reg_data_input <= data_in[7:0];
-    //         end
-    //     end
-    // end
+    always @(posedge clk) begin
+        if (!rst_n) begin
+            reg_data_input <= 0;
+        end else begin
+            if (address == DATA_INPUT_REG_ADDR) begin
+                if (data_write_n != 2'b11)
+                    reg_data_input <= data_in[7:0];
+            end
+        end
+    end
 
     // The bottom 8 bits of the stored data are added to ui_in and output to uo_out.
     assign uo_out = ui_in;
 
-    // reg [31:0] data_out_reg;
-    // always_comb begin
-    //     case (address)
-    //         6'h00: data_out_reg                         = {24'h0, reg_apu[0]};
-    //         CONFIGURATION0_REG_ADDR: data_out_reg       = {24'h0, reg_configuration0};
-    //         CONFIGURATION1_REG_ADDR: data_out_reg       = {24'h0, reg_configuration1};
-    //         STATUS1_REG_ADDR: data_out_reg              = {24'h0, reg_status0};
-    //         DATA_INPUT_REG_ADDR: data_out_reg           = {24'h0, reg_data_input};
-    //         DATA_OUTPUT_MSB_REG_ADDR: data_out_reg      = {24'h0, reg_data_output_msb};
-    //         DATA_OUTPUT_LSB_REG_ADDR: data_out_reg      = {24'h0, reg_data_output_lsb};
-    //         APU_STATUS_REG_ADDRESS: data_out_reg        = {24'h0, apu_dout};
-    //         APU_FRAME_COUNTER_REG_ADDRESS: data_out_reg     = {24'h0, apu_dout};
-    //         default: begin
-    //             if ((address >= 6'h00)&&(address < 6'h20)) begin
-    //                 data_out_reg = {24'h0, reg_apu[address]};
-    //             end else begin
-    //                 data_out_reg = 32'h0;
-    //             end
-    //         end
-    //     endcase
-    // end
-    // assign data_out = data_out_reg;
     assign data_out =   (address == 6'h00)                      ? {24'h0, reg_apu[0]} :
                         (address == 6'h01)                      ? {24'h0, reg_apu[1]} :
                         (address == 6'h02)                      ? {24'h0, reg_apu[2]} :
