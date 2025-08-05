@@ -729,13 +729,9 @@ module APU (
     input  logic         RW,
     input  logic         CS,
     input  logic  [4:0]  audio_channels, // Enabled audio channels
-    input  logic  [7:0]  DmaData,        // Input data to DMC from memory.
     input  logic         odd_or_even,
-    input  logic         DmaAck,         // 1 when DMC byte is on DmcData. DmcDmaRequested should go low.
     output logic  [7:0]  DOUT,           // Data from APU
     output wire   [15:0] Sample,
-    output logic         DmaReq,         // 1 when DMC wants DMA
-    output logic  [15:0] DmaAddr,        // Address DMC wants to read
     output logic         IRQ,            // IRQ asserted high == asserted
     output logic         o_ce
     );
