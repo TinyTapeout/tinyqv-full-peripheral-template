@@ -9,11 +9,11 @@
  //   - ui_in[0] to ui_in[7]: Input PMOD, always available. Note that ui_in[7] is normally used for UART RX.
  //     The inputs are synchronized to the clock, note this will introduce 2 cycles of delay on the inputs.
  //   - uo_out[0] to uo_out[7]: Output PMOD, only connected if this peripheral is selected.
- //      ⚠ Note that uo_out[0] is normally used for UART TX.
- //         +uo_out[1]: Audio PWM output Left Channel.
- //         +uo_out[2]: Audio PWM output Right Channel.
- //         +uo_out[3]: apu_phi2_clk - 21.477MHz.
- //         +uo_out[4]: apu_IRQ
+ //     ⚠ Note that uo_out[0] is normally used for UART TX.
+ //       +uo_out[1]: Audio PWM output Left Channel.
+ //       +uo_out[2]: Audio PWM output Right Channel.
+ //       +uo_out[3]: apu_phi2_clk - 21.477MHz.
+ //       +uo_out[4]: apu_IRQ
 
  // Memory Mapped Registers
  //
@@ -21,16 +21,12 @@
  //    0x01 - 0x0F - APU Register Direct Access (Pass-through for NES APU registers 0x4001-0x400F) - Read/Write
  //
  //    0x20 - Configuration0 - Read/Write
- //       | b7           | b6  | b5 | b4 | b3 | b2 | b1 | b0 |
- //       | Enhanced APU |     |    |    | CS |    | US | CE |
- //
- //    0x21 - Configuration1 - Read/Write
- //       | b7                  | b6 | b5 | b4 | b3 | b2 | b1 | b0 |
- //       | PMOD PWM Out enable |  |  |  |  |  | isMMC5 | APU Mapper saturates |
+ //       | b7 |    b6    | b5 | b4 | b3 | b2 | b1 | b0 |
+ //       |    |  isMMC5  |    |    | CS |    | US | CE |
  //
  //    0x22 - Status0 - Read
- //       | b7 |          b6        |        b5          |       b4           |          b3        |         b2         | b1  |         b0        |
- //       |    |  Audio Channel[4]  |  Audio Channel[3]  |  Audio Channel[2]  |  Audio Channel[1]  |  Audio Channel[0]  | IRQ | Data Output Ready |
+ //       | b7 |       b6        |       b5          |       b4         |          b3        |        b2          | b1  |          b0        |
+ //       |    |  Audio Channel[4] |  Audio Channel[3] |  Audio Channel[2] |  Audio Channel[1]  |  Audio Channel[0]  | IRQ | Data Output Ready |
  //
  //    0x23 - Data Input - Write/Read (Data to be written to APU's DIN port for commands/writes)
  //
@@ -45,29 +41,28 @@
 `default_nettype none
 
 module tqvp_fjpolo_rv2a03 (
-    input          clk,           // Clock - the TinyQV project clock is normally set to 64MHz.
-    input          rst_n,         // Reset_n - low to reset.
+    input        clk,           // Clock - the TinyQV project clock is normally set to 64MHz.
+    input        rst_n,         // Reset_n - low to reset.
 
-    input    [7:0] ui_in,         // The input PMOD, always available. Note that ui_in[7] is normally used for UART RX.
-    output   [7:0] uo_out,        // The output PMOD. Each wire is only connected if this peripheral is selected.
+    input  [7:0] ui_in,         // The input PMOD, always available. Note that ui_in[7] is normally used for UART RX.
+    output [7:0] uo_out,        // The output PMOD. Each wire is only connected if this peripheral is selected.
 
-    input    [5:0] address,       // Address within this peripheral's address space
-    input   [31:0] data_in,       // Data in to the peripheral, bottom 8, 16 or all 32 bits are valid on write.
+    input  [5:0] address,       // Address within this peripheral's address space
+    input  [31:0] data_in,      // Data in to the peripheral, bottom 8, 16 or all 32 bits are valid on write.
 
-    input    [1:0] data_write_n,  // 11 = no write, 00 = 8-bits, 01 = 16-bits, 10 = 32-bits
-    input    [1:0] data_read_n,   // 11 = no read, 00 = 8-bits, 01 = 16-bits, 10 = 32-bits
+    input  [1:0] data_write_n,  // 11 = no write, 00 = 8-bits, 01 = 16-bits, 10 = 32-bits
+    input  [1:0] data_read_n,   // 11 = no read, 00 = 8-bits, 01 = 16-bits, 10 = 32-bits
     
-    output  [31:0] data_out,      // Data out from the peripheral
-    output         data_ready,
+    output [31:0] data_out,      // Data out from the peripheral
+    output        data_ready,
 
-    output         user_interrupt // Dedicated interrupt request for this peripheral
+    output        user_interrupt // Dedicated interrupt request for this peripheral
 );
 
     wire [7:0] apu_dout;
     wire apu_o_ce; // New wire to capture the clock enable from the APU
 
     localparam CONFIGURATION0_REG_ADDR = 6'h20;
-    localparam CONFIGURATION1_REG_ADDR = 6'h21;
     localparam STATUS1_REG_ADDR = 6'h22;
     localparam DATA_INPUT_REG_ADDR = 6'h23;
     localparam DATA_OUTPUT_MSB_REG_ADDR = 6'h24;
@@ -77,24 +72,22 @@ module tqvp_fjpolo_rv2a03 (
 
     reg [7:0] reg_apu [30:0];
     reg [7:0] reg_configuration0;
-    reg [7:0] reg_configuration1;
     reg [7:0] reg_data_input;
     reg [7:0] reg_data_output_msb;
     reg [7:0] reg_data_output_lsb;
     reg [7:0] reg_status0;
 
     initial reg_configuration0 = 8'h00;      
-    initial reg_configuration1 = 8'h00;      
     initial reg_data_input = 8'h00;          
     initial reg_data_output_msb = 8'hFF;     
     initial reg_data_output_lsb = 8'h00;     
     initial reg_status0 = 8'h00;             
 
     wire apu_us = reg_configuration0[2];
-    wire apu_enhanced = 1'b0;
-    wire apu_mapper_saturates = reg_configuration1[0];
-    wire apu_is_mmc5 = 1'b0;
-    wire [4:0] apu_audio_channels = reg_configuration1[6:2];
+    wire apu_is_mmc5 = reg_configuration0[6];          // New bit for isMMC5
+    
+    // Hardcoded apu_audio_channels to all 1s (5 channels)
+    wire [4:0] apu_audio_channels = 5'b11111; 
 
     wire [7:0] apu_data_out;
     wire [15:0] apu_output_sample_16b;
@@ -187,11 +180,11 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
     
-    // assign uo_out[7:5] = ui_in[7:5];
-    // assign uo_out[4]   = apu_IRQ;
-    // assign uo_out[3]   = apu_phi2_clk; // The output pin is still the derived clock
-    // assign uo_out[2:0] = ui_in[2:0];                
-    assign uo_out = ui_in; 
+    // Explicitly assigning uo_out bits as per comments
+    assign uo_out[7:5] = ui_in[7:5];
+    assign uo_out[4]   = apu_IRQ;
+    assign uo_out[3]   = apu_phi2_clk; // The output pin is still the derived clock
+    assign uo_out[2:0] = ui_in[2:0];                
 
     integer i;
     always_ff @(posedge clk or negedge rst_n) begin
@@ -201,14 +194,14 @@ module tqvp_fjpolo_rv2a03 (
             end
         end else begin
             if (data_write_n == 2'b00) begin
-                if (address >= 6'h00 && address < 6'h20) begin
-                    reg_apu[address[4:0]] <= data_in[7:0];
+                if (address >= 6'h00 && address < 6'h20) begin // APU registers 0x00-0x1F for writes
+                    reg_apu[address[4:0]] <= data_in[7:0]; // Use lower 5 bits for APU internal addressing
                 end
             end
         end
     end
     
-    always @(posedge clk) begin
+    always @(posedge clk) begin // Corrected 'cllk' to 'clk' in previous version, ensuring it's 'clk' here
         if (!rst_n) begin
             reg_configuration0 <= 0;
         end else begin
@@ -219,16 +212,7 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
 
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            reg_configuration1 <= 0;
-        end else begin
-            if (address == CONFIGURATION1_REG_ADDR[5:0]) begin
-                if (data_write_n != 2'b11)
-                    reg_configuration1 <= data_in[7:0];
-            end
-        end
-    end
+    // Removed reg_configuration1 always block
 
     always @(posedge clk) begin
         if (!rst_n) begin
@@ -241,35 +225,18 @@ module tqvp_fjpolo_rv2a03 (
         end
     end
 
-    // assign data_out =   (address < 6'h15)                       ? {24'h0, reg_apu[address]} :
-    //                     (address == CONFIGURATION0_REG_ADDR)    ? {24'h0, reg_configuration0} :
-    //                     (address == CONFIGURATION1_REG_ADDR)    ? {24'h0, reg_configuration1} :
-    //                     (address == STATUS1_REG_ADDR)           ? {24'h0, reg_configuration1} :
-    //                     (address == DATA_INPUT_REG_ADDR)        ? {24'h0, reg_data_input} :
-    //                     (address == DATA_OUTPUT_MSB_REG_ADDR)   ? {24'h0, reg_data_output_msb} :
-    //                     (address == DATA_OUTPUT_LSB_REG_ADDR)   ? {24'h0, reg_data_output_lsb} :
-    //                     (address == APU_STATUS_REG_ADDRESS)     ? {24'h0, apu_dout} :
-    //                     'h0;
-
     logic [31:0] data_out_reg;
     always_comb begin
         case (address)
-            6'h00: data_out_reg = {24'h0, reg_apu[0]};
+            // Removed direct APU register access (0x00-0x0F)
             CONFIGURATION0_REG_ADDR: data_out_reg = {24'h0, reg_configuration0};
-            CONFIGURATION1_REG_ADDR: data_out_reg = {24'h0, reg_configuration1};
             STATUS1_REG_ADDR: data_out_reg = {24'h0, reg_status0};
             DATA_INPUT_REG_ADDR: data_out_reg = {24'h0, reg_data_input};
             DATA_OUTPUT_MSB_REG_ADDR: data_out_reg = {24'h0, reg_data_output_msb};
             DATA_OUTPUT_LSB_REG_ADDR: data_out_reg = {24'h0, reg_data_output_lsb};
             APU_STATUS_REG_ADDRESS: data_out_reg = {24'h0, apu_dout};
-            APU_FRAME_COUNTER_REG_ADDRESS: data_out_reg = {24'h0, apu_dout};
-            default: begin
-                if (address >= 6'h00 && address < 6'h20) begin
-                    data_out_reg = {24'h0, reg_apu[address]};
-                end else begin
-                    data_out_reg = 32'h0;
-                end
-            end
+            APU_FRAME_COUNTER_REG_ADDRESS: data_out_reg = {24'h0, apu_dout}; // Assuming this also reads from apu_dout
+            default: data_out_reg = 32'h0; // All other addresses return 0
         endcase
     end
     assign data_out = data_out_reg;
@@ -296,4 +263,4 @@ module tqvp_fjpolo_rv2a03 (
 
     wire _unused = &{data_read_n, data_ready, user_interrupt, 1'b0};
 
-endmodule
+endmodule 
