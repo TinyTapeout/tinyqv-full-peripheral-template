@@ -7,8 +7,6 @@ from cocotb.triggers import ClockCycles, RisingEdge
 from cocotb.triggers import Timer
 
 from tqv import TinyQV
-import matplotlib.pyplot as plt
-import numpy as np
 
 CONFIGURATION0_REG_ADDR = 0x20
 CONFIGURATION1_REG_ADDR = 0x21
@@ -122,17 +120,6 @@ async def test_all_channels_simultaneously(tqv, dut):
         else:
             signed_sample = combined_sample
         output_samples.append(signed_sample)
-    
-    timestamps = np.arange(NUM_CYCLES_TO_CAPTURE) * 100e-9
-    plt.figure(figsize=(12, 6))
-    plt.plot(np.array(timestamps) * 1e3, output_samples)
-    plt.title('APU Mixed Output Sample (Normal Mixer)')
-    plt.xlabel('Time (ms)')
-    plt.ylabel('Sample Value (16-bit signed)')
-    plt.grid(True)
-    plt.tight_layout()
-    plt.savefig('apu_output_sample_normal.png')
-    dut._log.info("Plot saved as apu_output_sample_normal.png")
 
 @cocotb.test()
 async def test_project(dut):
