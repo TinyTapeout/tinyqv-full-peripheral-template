@@ -10,10 +10,7 @@
  //     The inputs are synchronized to the clock, note this will introduce 2 cycles of delay on the inputs.
  //   - uo_out[0] to uo_out[7]: Output PMOD, only connected if this peripheral is selected.
  //     ⚠ Note that uo_out[0] is normally used for UART TX.
- //       +uo_out[1]: Audio PWM output Left Channel.
- //       +uo_out[2]: Audio PWM output Right Channel.
- //       +uo_out[3]: apu_phi2_clk - 21.477MHz.
- //       +uo_out[4]: apu_IRQ
+ //       +uo_out[1]: apu_IRQ
 
  // Memory Mapped Registers
  //
@@ -177,10 +174,8 @@ module tqvp_fjpolo_rv2a03 (
     end
     
     // Explicitly assigning uo_out bits as per comments
-    assign uo_out[7:5] = ui_in[7:5];
-    assign uo_out[4]   = apu_IRQ;
-    assign uo_out[3]   = apu_phi2_clk; // The output pin is still the derived clock
-    assign uo_out[2:0] = ui_in[2:0];                
+    assign uo_out[0]   = apu_IRQ;
+    assign uo_out[7:1] = ui_in[7:1];                
 
     integer i;
     always_ff @(posedge clk or negedge rst_n) begin

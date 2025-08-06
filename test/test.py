@@ -3,7 +3,7 @@
 
 import cocotb
 from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles, RisingEdge
+from cocotb.triggers import ClockCycles, RisingEdge, FallingEdge
 from cocotb.triggers import Timer
 
 from tqv import TinyQV
@@ -74,11 +74,22 @@ async def configure_tri(tqv):
     await tqv.write_byte_reg(APU_TRI_REG2_ADDRESS, TRI_TIMER_PERIOD_LOW)
     await tqv.write_byte_reg(APU_TRI_REG3_ADDRESS, (LENGTH_COUNTER_LOAD_VALUE | TRI_TIMER_PERIOD_HIGH))
 
+async def configure_noise(tqv):
+    """Configures Noise Channel (assuming a simple configuration)."""
+    # The register mapping for the Noise channel would typically be 0x0C-0x0F.
+    # This is a placeholder as the Noise module was not provided.
+    await tqv.write_byte_reg(0x0C, 0x9F)  # Example Envelope
+    await tqv.write_byte_reg(0x0F, 0x0F)  # Example Length Counter Load/Timer Period
+
 async def capture_samples(tqv, dut, num_cycles):
-    """Captures APU output samples for a given number of cycles."""
+    """
+    Captures APU output samples for a given number of cycles,
+    reading the sample on each clock cycle.
+    """
     samples = []
-    # I remember you requested that the testbench should account for o_ce
+
     for _ in range(num_cycles):
+        await RisingEdge(dut.clk)
         msb_value = await tqv.read_byte_reg(DATA_OUTPUT_MSB_REG_ADDR)
         lsb_value = await tqv.read_byte_reg(DATA_OUTPUT_LSB_REG_ADDR)
         combined_sample = (msb_value << 8) | lsb_value
@@ -91,56 +102,110 @@ async def capture_samples(tqv, dut, num_cycles):
         samples.append(signed_sample)
     return samples
 
-# --- Test Function 1 (Original) ---
-async def test_all_channels_simultaneously(tqv, dut):
-    """
-    Test Phase 1: Configures and runs all three channels simultaneously.
-    """
-    dut._log.info("--- Test Phase 1: All channels together (Normal Mixer) ---")
-
-    # Enable channels: Sq1, Sq2, Tri
-    await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x07)
-    
-    await configure_sq1(tqv)
-    await configure_sq2(tqv)
-    await configure_tri(tqv)
-
-    # Add a short delay to allow the linear counter to stabilize
-    await ClockCycles(dut.clk, 50000)
-
-    # Capture output and generate plot
-    output_samples = []
-    NUM_CYCLES_TO_CAPTURE = 100
-    for i in range(NUM_CYCLES_TO_CAPTURE):
-        msb_value = await tqv.read_byte_reg(DATA_OUTPUT_MSB_REG_ADDR)
-        lsb_value = await tqv.read_byte_reg(DATA_OUTPUT_LSB_REG_ADDR)
-        combined_sample = (msb_value << 8) | lsb_value
-        if combined_sample & 0x8000:
-            signed_sample = combined_sample - 0x10000
-        else:
-            signed_sample = combined_sample
-        output_samples.append(signed_sample)
-
-@cocotb.test()
-async def test_project(dut):
+async def common_setup(dut):
+    """Initializes the clock, TQV interface, and performs a global reset."""
     dut._log.info("Start")
     clock = Clock(dut.clk, 100, units="ns")
     cocotb.start_soon(clock.start())
     tqv = TinyQV(dut)
-
     await tqv.reset()
     await ClockCycles(dut.clk, 10)
-    dut._log.info("Test project behavior")
     
     # --- GLOBAL APU RESET ---
     dut._log.info("Performing a global APU reset before starting tests.")
     await disable_all_channels(tqv)
     
-    # Configure the APU for the normal mixer test
+    # Configure the APU
     await tqv.write_byte_reg(CONFIGURATION0_REG_ADDR, 0x01)
     await tqv.write_byte_reg(CONFIGURATION0_REG_ADDR, 0x01)
+    
+    return tqv
 
-    # Call the test function for the normal mixer
-    await test_all_channels_simultaneously(tqv, dut)
+@cocotb.test()
+async def test_sq1_channel(dut):
+    """Test Square Channel 1."""
+    dut._log.info("--- Test: Square Channel 1 ---")
+    tqv = await common_setup(dut)
+    
+    # Enable only Square 1 channel (bit 0)
+    await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x01)
+    await configure_sq1(tqv)
+    
+    await ClockCycles(dut.clk, 50000)
+    
+    output_samples = await capture_samples(tqv, dut, 100)
+    
+    assert any(s != 0 for s in output_samples), "Square 1 channel produced no output."
+    dut._log.info("Square 1 channel test finished.")
 
-    dut._log.info("Test finished.")
+@cocotb.test()
+async def test_sq2_channel(dut):
+    """Test Square Channel 2."""
+    dut._log.info("--- Test: Square Channel 2 ---")
+    tqv = await common_setup(dut)
+    
+    # Enable only Square 2 channel (bit 1)
+    await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x02)
+    await configure_sq2(tqv)
+    
+    await ClockCycles(dut.clk, 50000)
+    
+    output_samples = await capture_samples(tqv, dut, 100)
+    
+    assert any(s != 0 for s in output_samples), "Square 2 channel produced no output."
+    dut._log.info("Square 2 channel test finished.")
+
+@cocotb.test()
+async def test_tri_channel(dut):
+    """Test Triangle Channel."""
+    dut._log.info("--- Test: Triangle Channel ---")
+    tqv = await common_setup(dut)
+    
+    # Enable only Triangle channel (bit 2)
+    await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x04)
+    await configure_tri(tqv)
+    
+    await ClockCycles(dut.clk, 50000)
+    
+    output_samples = await capture_samples(tqv, dut, 100)
+    
+    assert any(s != 0 for s in output_samples), "Triangle channel produced no output."
+    dut._log.info("Triangle channel test finished.")
+
+@cocotb.test()
+async def test_noise_channel(dut):
+    """Test Noise Channel."""
+    dut._log.info("--- Test: Noise Channel ---")
+    tqv = await common_setup(dut)
+    
+    # Enable only Noise channel (bit 3)
+    await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x08)
+    await configure_noise(tqv)
+    
+    await ClockCycles(dut.clk, 50000)
+    
+    output_samples = await capture_samples(tqv, dut, 100)
+    
+    assert any(s != 0 for s in output_samples), "Noise channel produced no output."
+    dut._log.info("Noise channel test finished.")
+
+@cocotb.test()
+async def test_all_channels_together(dut):
+    """Test all channels simultaneously."""
+    dut._log.info("--- Test: All Channels Together ---")
+    tqv = await common_setup(dut)
+    
+    # Enable channels: Sq1, Sq2, Tri, Noise
+    await tqv.write_byte_reg(APU_STATUS_REG_ADDRESS, 0x0F)
+    
+    await configure_sq1(tqv)
+    await configure_sq2(tqv)
+    await configure_tri(tqv)
+    await configure_noise(tqv)
+
+    await ClockCycles(dut.clk, 50000)
+
+    output_samples = await capture_samples(tqv, dut, 100)
+    
+    assert any(s != 0 for s in output_samples), "Combined channels produced no output."
+    dut._log.info("All channels test finished.")
