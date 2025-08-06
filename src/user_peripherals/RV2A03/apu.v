@@ -846,10 +846,10 @@ end
 // Square waves: A simple linear sum of the two channels.
 wire [15:0] ch1_output = {12'b0, square1} + {12'b0, square2};
 
-// Normal mixer path (now combinatorial linear)
-// Widen smaller channel outputs to 16 bits for addition
-wire [15:0] tri_normal_output_scaled = {6'b0, triangle, 6'b0};
-wire [15:0] noise_output_scaled = {5'b0, noise_lut[noise], 5'b0};
+// // Normal mixer path (now combinatorial linear)
+// // Widen smaller channel outputs to 16 bits for addition
+// wire [15:0] tri_normal_output_scaled = {6'b0, triangle, 6'b0};
+// wire [15:0] noise_output_scaled = {5'b0, noise_lut[noise], 5'b0};
 
 // Sum all channels for the normal linear mixer output
 assign sample = ch1_output + triangle + noise_lut[noise];
