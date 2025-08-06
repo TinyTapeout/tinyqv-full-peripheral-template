@@ -137,8 +137,8 @@ async def test_project(dut):
     await disable_all_channels(tqv)
     
     # Configure the APU for the normal mixer test
-    await tqv.write_byte_reg(CONFIGURATION0_REG_ADDR, 0x89)
-    await tqv.write_byte_reg(CONFIGURATION1_REG_ADDR, 0x00)
+    await tqv.write_byte_reg(CONFIGURATION0_REG_ADDR, 0x01)
+    await tqv.write_byte_reg(CONFIGURATION0_REG_ADDR, 0x01)
 
     # Call the test function for the normal mixer
     await test_all_channels_simultaneously(tqv, dut)

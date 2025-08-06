@@ -21,11 +21,11 @@
  //    0x01 - 0x0F - APU Register Direct Access (Pass-through for NES APU registers 0x4001-0x400F) - Read/Write
  //
  //    0x20 - Configuration0 - Read/Write
- //       | b7 |    b6    | b5 | b4 | b3 | b2 | b1 | b0 |
- //       |    |  isMMC5  |    |    | CS |    | US | CE |
+ //       | b7 | b6 | b5 | b4 | b3 |    b2    | b1 | b0 |
+ //       |    |    |    |    |    | isMMC5   | US | CE |
  //
  //    0x22 - Status0 - Read
- //       | b7 |       b6        |       b5          |       b4         |          b3        |        b2          | b1  |          b0        |
+ //       | b7 |         b6        |       b5          |       b4         |          b3        |        b2          | b1  |          b0        |
  //       |    |  Audio Channel[4] |  Audio Channel[3] |  Audio Channel[2] |  Audio Channel[1]  |  Audio Channel[0]  | IRQ | Data Output Ready |
  //
  //    0x23 - Data Input - Write/Read (Data to be written to APU's DIN port for commands/writes)
@@ -82,10 +82,8 @@ module tqvp_fjpolo_rv2a03 (
     initial reg_data_output_lsb = 8'h00;     
     initial reg_status0 = 8'h00;             
 
-    wire apu_us = reg_configuration0[2];
-    wire apu_enhanced = 1'b0; // Hardcoded to 0
-    wire apu_mapper_saturates = reg_configuration0[5]; // New bit for mapper saturates
-    wire apu_is_mmc5 = reg_configuration0[6];          // New bit for isMMC5
+    wire apu_us = reg_configuration0[1];
+    wire apu_is_mmc5 = reg_configuration0[2];          // New bit for isMMC5
     
     wire [4:0] apu_audio_channels = 5'b01111; 
 
