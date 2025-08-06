@@ -25,7 +25,7 @@
  //       |    |    |    |    |    | isMMC5   | US | CE |
  //
  //    0x22 - Status0 - Read
- //       | b7 |         b6        |       b5          |       b4         |          b3        |        b2          | b1  |          b0        |
+ //       | b7 |         b6        |       b5          |        b4         |          b3        |        b2          | b1  |         b0        |
  //       |    |  Audio Channel[4] |  Audio Channel[3] |  Audio Channel[2] |  Audio Channel[1]  |  Audio Channel[0]  | IRQ | Data Output Ready |
  //
  //    0x23 - Data Input - Write/Read (Data to be written to APU's DIN port for commands/writes)
