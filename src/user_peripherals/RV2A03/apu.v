@@ -376,117 +376,6 @@ module TriangleChan (
 
 endmodule
 
-module TriangleChan_enhanced_6b (
-    input  logic       clk,
-    input  logic       phi1,
-    input  logic       aclk1,
-    input  logic       aclk1_d,
-    input  logic       reset,
-    input  logic       cold_reset,
-    input  logic       allow_us,
-    input  logic [1:0] Addr,
-    input  logic [7:0] DIN,
-    input  logic       write,
-    input  logic [7:0] lc_load,
-    input  logic       LenCtr_Clock,
-    input  logic       LinCtr_Clock,
-    input  logic       Enabled,
-    output logic [5:0] Sample,
-    output logic       IsNonZero
-);
-    logic [10:0] Period, applied_period, TimerCtr;
-    logic [5:0] SeqPos;
-    logic [6:0] LinCtrPeriod, LinCtrPeriod_1, LinCtr;
-    logic LinCtrl, line_reload;
-    logic LinCtrZero;
-    logic lc;
-
-    logic LenCtrZero;
-    logic subunit_write;
-    logic [5:0] sample_latch;
-
-    assign LinCtrZero = ~|LinCtr;
-    assign IsNonZero = lc;
-    assign subunit_write = (Addr == 0 || Addr == 3) & write;
-
-    assign Sample = (applied_period > 1 || allow_us) ? (SeqPos ^ {6{~SeqPos[5]}}) : sample_latch;
-
-    LenCounterUnit LenTri (
-        .clk            (clk),
-        .reset          (reset),
-        .cold_reset     (cold_reset),
-        .aclk1          (aclk1),
-        .aclk1_d        (aclk1_d),
-        .len_clk        (LenCtr_Clock),
-        .load_value     (lc_load),
-        .halt_in        (DIN[7]),
-        .addr           (Addr[0]),
-        .is_triangle    (1'b1),
-        .write          (subunit_write),
-        .enabled        (Enabled),
-        .lc_on          (lc)
-    );
-
-    always_ff @(posedge clk) begin
-        if (phi1) begin
-            if (TimerCtr == 0) begin
-                TimerCtr <= Period;
-                applied_period <= Period;
-                if (IsNonZero & ~LinCtrZero)
-                    SeqPos <= SeqPos + 1'd1;
-            end else begin
-                TimerCtr <= TimerCtr - 1'd1;
-            end
-        end
-
-        if (aclk1) begin
-            LinCtrPeriod_1 <= LinCtrPeriod;
-        end
-
-        if (LinCtr_Clock) begin
-            if (line_reload)
-                LinCtr <= LinCtrPeriod_1;
-            else if (!LinCtrZero)
-                LinCtr <= LinCtr - 1'd1;
-
-            if (!LinCtrl)
-                line_reload <= 0;
-        end
-
-        if (write) begin
-            case (Addr)
-                0: begin
-                    LinCtrl <= DIN[7];
-                    LinCtrPeriod <= DIN[6:0];
-                end
-                2: begin
-                    Period[7:0] <= DIN;
-                end
-                3: begin
-                    Period[10:8] <= DIN[2:0];
-                    line_reload <= 1;
-                end
-            endcase
-        end
-
-        if (reset) begin
-            sample_latch <= 6'h3F;
-            Period <= 0;
-            TimerCtr <= 0;
-            SeqPos <= 0;
-            LinCtrPeriod <= 0;
-            LinCtr <= 0;
-            LinCtrl <= 0;
-            line_reload <= 0;
-        end
-
-        if (applied_period > 1) sample_latch <= Sample;
-    end
-
-endmodule
-
-
-
 module NoiseChan (
     input  logic       clk,
     input  logic       ce,
@@ -951,12 +840,6 @@ module APU (
     assign o_ce = apu_ce_sync;
 endmodule
 
-
-// http://wiki.nesdev.com/w/index.php/APU_Mixer
-// I generated three LUT's for each mix channel entry and one lut for the squares, then a
-// 284 entry lut for the mix channel. It's more accurate than the original LUT system listed on
-// the NesDev page. In addition I boosted the square channel 10% and lowered the mix channel 10%
-// to more closely match real systems.
 
 module APUMixer (
     input  logic  [3:0] square1,
