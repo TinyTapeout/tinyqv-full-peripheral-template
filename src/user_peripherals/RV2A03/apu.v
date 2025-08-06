@@ -139,15 +139,10 @@ module SquareChan (
     // Register 1
     logic [1:0] Duty;
 
-    // Register 2
-    logic SweepEnable, SweepNegate, SweepReset;
-    logic [2:0] SweepPeriod, SweepDivider, SweepShift;
+    // Registers and signals for period and sequencing
     logic [10:0] Period;
     logic [11:0] TimerCtr;
     logic [2:0] SeqPos;
-    logic [10:0] ShiftedPeriod;
-    logic [10:0] PeriodRhs;
-    logic [11:0] NewSweepPeriod;
 
     logic ValidFreq;
     logic subunit_write;
@@ -157,13 +152,11 @@ module SquareChan (
     logic DutyEnabled;
 
     assign DutyEnabledUsed = MMC5 ^ DutyEnabled;
-    assign ShiftedPeriod = (Period >> SweepShift);
-    assign PeriodRhs = (SweepNegate ? (~ShiftedPeriod + {10'b0, sq2}) : ShiftedPeriod);
-    assign NewSweepPeriod = Period + PeriodRhs;
     assign subunit_write = (Addr == 0 || Addr == 3) & write;
     assign IsNonZero = lc;
 
-    assign ValidFreq = (MMC5 && allow_us) || ((|Period[10:3]) && (SweepNegate || ~NewSweepPeriod[11]));
+    // Simplified ValidFreq check without sweep logic
+    assign ValidFreq = (MMC5 && allow_us) || (|Period[10:3]);
     assign Sample = (~lc | ~ValidFreq | ~DutyEnabledUsed) ? 4'd0 : Envelope;
 
     LenCounterUnit LenSq (
@@ -193,7 +186,6 @@ module SquareChan (
     );
 
     always_comb begin
-        // The wave forms nad barrel shifter are abstracted simply here
         case (Duty)
             0: DutyEnabled = (SeqPos == 7);
             1: DutyEnabled = (SeqPos >= 6);
@@ -202,61 +194,37 @@ module SquareChan (
         endcase
     end
 
-    always_ff @(posedge clk) begin : sqblock
-        // Unusual to APU design, the square timers are clocked overlapping two phi2. This
-        // means that writes can impact this operation as they happen, however because of the way
-        // the results are presented, we can simply delay it rather than adding complexity for
-        // the same results.
-
-        if (aclk1_d) begin
-            if (TimerCtr == 0) begin
-                TimerCtr <= {1'b0, Period};
-                SeqPos <= SeqPos - 1'd1;
-            end else begin
-                TimerCtr <= TimerCtr - 1'd1;
-            end
-        end
-
-        // Sweep Unit
-        if (LenCtr_Clock) begin
-            if (SweepDivider == 0) begin
-                SweepDivider <= SweepPeriod;
-                if (SweepEnable && SweepShift != 0 && ValidFreq)
-                    Period <= NewSweepPeriod[10:0];
-            end else begin
-                SweepDivider <= SweepDivider - 1'd1;
-            end
-            if (SweepReset)
-                SweepDivider <= SweepPeriod;
-            SweepReset <= 0;
-        end
-
-        if (write) begin
-            case (Addr)
-                0: Duty <= DIN[7:6];
-                1: if (~MMC5) begin
-                    {SweepEnable, SweepPeriod, SweepNegate, SweepShift} <= DIN;
-                    SweepReset <= 1;
-                end
-                2: Period[7:0] <= DIN;
-                3: begin
-                    Period[10:8] <= DIN[2:0];
-                    SeqPos <= 0;
-                end
-            endcase
-        end
-
+    // Consolidated main logic block with sweep removed
+    always_ff @(posedge clk) begin
         if (reset) begin
             Duty <= 0;
-            SweepEnable <= 0;
-            SweepNegate <= 0;
-            SweepReset <= 0;
-            SweepPeriod <= 0;
-            SweepDivider <= 0;
-            SweepShift <= 0;
             Period <= 0;
             TimerCtr <= 0;
             SeqPos <= 0;
+        end else begin
+            if (write) begin
+                case (Addr)
+                    0: Duty <= DIN[7:6];
+                    1: begin
+                        // This address is now ignored, since the sweep unit is removed.
+                        // You could add a comment here to show this.
+                    end
+                    2: Period[7:0] <= DIN;
+                    3: begin
+                        Period[10:8] <= DIN[2:0];
+                        SeqPos <= 0;
+                    end
+                endcase
+            end
+
+            if (aclk1_d) begin
+                if (TimerCtr == 0) begin
+                    TimerCtr <= {1'b0, Period};
+                    SeqPos <= SeqPos - 1'd1;
+                end else begin
+                    TimerCtr <= TimerCtr - 1'd1;
+                end
+            end
         end
     end
 
