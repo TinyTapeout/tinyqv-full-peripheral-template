@@ -87,7 +87,7 @@ module tqvp_fjpolo_rv2a03 (
     wire apu_mapper_saturates = reg_configuration0[5]; // New bit for mapper saturates
     wire apu_is_mmc5 = reg_configuration0[6];          // New bit for isMMC5
     
-    wire [4:0] apu_audio_channels = 5'b11111; 
+    wire [4:0] apu_audio_channels = 5'b01111; 
 
     wire [7:0] apu_data_out;
     wire [15:0] apu_output_sample_16b;
